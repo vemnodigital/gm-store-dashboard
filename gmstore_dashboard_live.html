@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GM Store — Dashboard Live</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;}
+
+/* SETUP SCREEN */
+#setup-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:32px;
+}
+.setup-box{
+  background:#1a1d27;border:1px solid #2d3148;border-radius:16px;
+  padding:40px;width:100%;max-width:520px;
+}
+.setup-box .logo{font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;}
+.setup-box .sub{font-size:13px;color:#6b7280;margin-bottom:32px;}
+.setup-divider{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px;}
+.form-group{margin-bottom:16px;}
+.form-group label{font-size:12px;color:#94a3b8;font-weight:600;display:block;margin-bottom:6px;}
+.form-group input{
+  width:100%;background:#12151e;border:1px solid #2d3148;border-radius:8px;
+  padding:11px 14px;font-size:13px;color:#e2e8f0;outline:none;transition:border-color 0.2s;
+  font-family:inherit;
+}
+.form-group input:focus{border-color:#3b5bdb;}
+.form-group input::placeholder{color:#4b5563;}
+.form-hint{font-size:11px;color:#4b5563;margin-top:5px;line-height:1.5;}
+.form-hint a{color:#748ffc;text-decoration:none;}
+.btn-primary{
+  width:100%;padding:13px;background:#3b5bdb;border:none;border-radius:10px;
+  color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;
+  transition:background 0.2s;font-family:inherit;
+}
+.btn-primary:hover{background:#4c6ef5;}
+.setup-security{
+  background:#12151e;border-radius:8px;padding:12px 14px;
+  font-size:12px;color:#6b7280;line-height:1.6;margin-top:16px;
+  display:flex;gap:8px;
+}
+
+/* HEADER */
+header{
+  background:linear-gradient(135deg,#1a1d27,#12151e);
+  border-bottom:1px solid #2d3148;padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.logo-area h1{font-size:18px;font-weight:800;color:#fff;}
+.logo-area span{font-size:11px;color:#6b7280;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* DATE PICKER */
+.date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.preset-btn{
+  padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;
+  cursor:pointer;border:1px solid #2d3148;background:#1a1d27;color:#6b7280;
+  transition:all 0.2s;font-family:inherit;
+}
+.preset-btn:hover,.preset-btn.active{border-color:#748ffc;color:#748ffc;background:#1e2a4a;}
+.date-input{
+  background:#12151e;border:1px solid #2d3148;border-radius:7px;
+  padding:6px 10px;font-size:12px;color:#e2e8f0;outline:none;
+  font-family:inherit;cursor:pointer;
+}
+.date-input:focus{border-color:#3b5bdb;}
+.btn-fetch{
+  padding:7px 18px;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;border:none;background:#3b5bdb;color:#fff;
+  transition:all 0.2s;font-family:inherit;
+}
+.btn-fetch:hover{background:#4c6ef5;}
+.btn-fetch:disabled{background:#1e2a4a;color:#4b5563;cursor:not-allowed;}
+.btn-settings{
+  padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid #2d3148;background:#1a1d27;color:#6b7280;
+  transition:all 0.2s;font-family:inherit;
+}
+.btn-settings:hover{color:#e2e8f0;border-color:#4f5b8a;}
+.btn-export{
+  padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid #2f9e44;background:#1a2a1e;color:#69db7c;
+  font-family:inherit;transition:all 0.2s;
+}
+.btn-export:hover{background:#2f9e44;color:#fff;}
+
+/* STORE FILTER */
+.store-filter{display:flex;gap:6px;}
+.store-btn{
+  padding:6px 13px;border-radius:7px;font-size:11px;font-weight:600;
+  cursor:pointer;border:1px solid #2d3148;background:#1a1d27;color:#6b7280;
+  transition:all 0.2s;font-family:inherit;
+}
+.store-btn.a-all{border-color:#748ffc;color:#748ffc;background:#1e2a4a;}
+.store-btn.a-sta{border-color:#60a5fa;color:#60a5fa;background:#1e3a5f;}
+.store-btn.a-cas{border-color:#f87171;color:#f87171;background:#3a1a1a;}
+
+/* LOADING */
+#loading{
+  display:none;position:fixed;inset:0;background:rgba(15,17,23,0.85);
+  z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.spinner{
+  width:44px;height:44px;border:3px solid #2d3148;
+  border-top-color:#3b5bdb;border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:#94a3b8;}
+
+/* ERROR */
+.error-box{
+  background:#2a1a1a;border:1px solid #ef4444;border-radius:10px;
+  padding:16px 20px;color:#ff8787;font-size:13px;margin:20px 0;
+  display:none;line-height:1.6;
+}
+
+/* DASHBOARD */
+#dashboard{display:none;}
+.container{padding:20px 28px;max-width:1400px;margin:0 auto;}
+.section-title{
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;
+  color:#6b7280;margin-bottom:12px;margin-top:24px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:#1e2235;}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:16px;transition:border-color 0.2s;}
+.card:hover{border-color:#4f5b8a;}
+.card .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;}
+.card .val{font-size:22px;font-weight:800;color:#fff;line-height:1;}
+.card .sub{font-size:11px;color:#6b7280;margin-top:4px;}
+.c-blue{border-color:#3b5bdb!important;background:linear-gradient(135deg,#1e2a4a,#1a1d27)!important;}
+.c-blue .val{color:#748ffc!important;}
+.c-green{border-color:#2f9e44!important;background:linear-gradient(135deg,#1a2a1e,#1a1d27)!important;}
+.c-green .val{color:#69db7c!important;}
+.c-red{border-color:#e03131!important;background:linear-gradient(135deg,#2a1a1a,#1a1d27)!important;}
+.c-red .val{color:#ff8787!important;}
+
+/* ALERT */
+.alert{border-radius:10px;padding:12px 16px;font-size:13px;margin-top:12px;display:flex;align-items:flex-start;gap:10px;line-height:1.6;}
+
+/* FUNIL */
+.funnel-wrapper{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:24px 28px;display:flex;gap:28px;align-items:flex-start;}
+.funnel-visual{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.funnel-bar{display:flex;align-items:center;justify-content:space-between;border-radius:6px;padding:10px 18px;color:#fff;font-size:13px;font-weight:500;width:100%;clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);transition:filter 0.2s;}
+.funnel-bar:hover{filter:brightness(1.15);}
+.funnel-connector{width:2px;height:10px;background:linear-gradient(to bottom,#374151,transparent);}
+.funnel-drop{font-size:11px;font-weight:600;border-radius:20px;padding:2px 8px;margin:2px 0;}
+.fd-bad{color:#ef4444;background:#2a1a1a;}
+.fd-ok{color:#69db7c;background:#1a2a1e;}
+.fd-warn{color:#fbbf24;background:#2a1e10;}
+.funnel-stats{width:240px;display:flex;flex-direction:column;gap:8px;}
+.fstat{background:#12151e;border-radius:8px;padding:11px 13px;border-left:3px solid;}
+.fstat .fs-l{font-size:11px;color:#6b7280;margin-bottom:3px;}
+.fstat .fs-v{font-size:16px;font-weight:700;}
+
+/* LOJAS */
+.stores-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.store-card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;overflow:hidden;}
+.store-header{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2d3148;}
+.store-header h3{font-size:14px;font-weight:700;}
+.store-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.store-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.sm{padding:12px 14px;border-right:1px solid #1e2235;border-bottom:1px solid #1e2235;}
+.sm:nth-child(3n){border-right:none;} .sm:nth-last-child(-n+3){border-bottom:none;}
+.sm .sl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.sm .sv{font-size:17px;font-weight:700;color:#fff;}
+.sm .ss{font-size:11px;color:#6b7280;margin-top:2px;}
+
+/* TABLE */
+.table-box{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;overflow:hidden;}
+.table-box h3{font-size:12px;font-weight:600;color:#94a3b8;padding:14px 18px;border-bottom:1px solid #2d3148;}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#6b7280;padding:8px 16px;text-align:left;background:#12151e;}
+tbody tr{border-bottom:1px solid #1e2235;transition:background 0.15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#1e2235;}
+tbody td{padding:10px 16px;font-size:12px;}
+.td-r{text-align:right;}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;}
+.bg{background:#1a3a22;color:#69db7c;} .br{background:#3a1a1a;color:#ff8787;} .by{background:#3a2e1a;color:#fbbf24;}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.chart-box{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:18px;}
+.chart-box h3{font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:14px;}
+.chart-box canvas{max-height:200px;}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 24px;color:#6b7280;font-size:13px;}
+.empty-state div{font-size:32px;margin-bottom:12px;}
+
+/* MODAL VENDAS */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:200;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:#1a1d27;border:1px solid #2d3148;border-radius:16px;
+  padding:32px;width:100%;max-width:480px;
+}
+.modal-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:#6b7280;margin-bottom:24px;}
+.modal-period{font-size:11px;color:#748ffc;font-weight:600;background:#1e2a4a;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:20px;}
+.modal-store{background:#12151e;border-radius:10px;padding:18px;margin-bottom:14px;}
+.modal-store-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;}
+.modal-store.sta .modal-store-label{color:#60a5fa;}
+.modal-store.castelo .modal-store-label{color:#f87171;}
+.modal-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-field label{font-size:11px;color:#6b7280;display:block;margin-bottom:5px;}
+.modal-field input{
+  width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;
+  padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;
+  font-family:inherit;transition:border-color 0.2s;
+}
+.modal-field input:focus{border-color:#3b5bdb;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.btn-salvar-vendas{
+  flex:1;padding:12px;background:#2f9e44;border:none;border-radius:10px;
+  color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:background 0.2s;
+}
+.btn-salvar-vendas:hover{background:#37b24d;}
+.btn-cancelar{
+  padding:12px 20px;background:transparent;border:1px solid #2d3148;border-radius:10px;
+  color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.btn-cancelar:hover{border-color:#4f5b8a;color:#e2e8f0;}
+.btn-vendas{
+  padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid #f59e0b;background:#2a1e10;color:#fbbf24;
+  font-family:inherit;transition:all 0.2s;
+}
+.btn-vendas:hover{background:#f59e0b;color:#000;}
+.btn-vendas.tem-dados{border-color:#2f9e44;background:#1a2a1e;color:#69db7c;}
+.btn-vendas.tem-dados:hover{background:#2f9e44;color:#fff;}
+
+.hidden{display:none!important;}
+@media(max-width:700px){
+  .stores-grid,.charts-row{grid-template-columns:1fr;}
+  .funnel-wrapper{flex-direction:column;}
+  .funnel-stats{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- MODAL VENDAS -->
+<div class="modal-overlay" id="modal-vendas">
+  <div class="modal-box">
+    <div class="modal-title">Registrar Vendas do Mês</div>
+    <div class="modal-sub">Preencha com os dados passados pelo comercial no fechamento.</div>
+    <div class="modal-period" id="modal-period-label">—</div>
+
+    <!-- ONLINE -->
+    <div class="modal-store" style="background:#12151e;border-radius:10px;padding:16px;margin-bottom:12px;border-left:3px solid #3b5bdb;">
+      <div class="modal-store-label" style="color:#748ffc;">Vendas Online (campanhas Meta)</div>
+      <div class="modal-inputs">
+        <div class="modal-field">
+          <label>Faturamento Online Total (R$)</label>
+          <input type="number" id="v-fat-online" placeholder="0,00" min="0" step="0.01"/>
+        </div>
+        <div class="modal-field">
+          <label>Pedidos / Vendas online</label>
+          <input type="number" id="v-vendas-online" placeholder="0" min="0"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- STA -->
+    <div class="modal-store sta" style="margin-bottom:12px;">
+      <div class="modal-store-label">Loja Santa Luzia (STA) — Faturamento Total</div>
+      <div class="modal-inputs">
+        <div class="modal-field">
+          <label>Faturamento Total da Loja (R$)</label>
+          <input type="number" id="v-sta-fat-total" placeholder="0,00" min="0" step="0.01"/>
+        </div>
+        <div class="modal-field">
+          <label>Vendas fechadas (qtd)</label>
+          <input type="number" id="v-sta-vendas" placeholder="0" min="0"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASTELO -->
+    <div class="modal-store castelo">
+      <div class="modal-store-label">Loja Castelo — Faturamento Total</div>
+      <div class="modal-inputs">
+        <div class="modal-field">
+          <label>Faturamento Total da Loja (R$)</label>
+          <input type="number" id="v-cas-fat-total" placeholder="0,00" min="0" step="0.01"/>
+        </div>
+        <div class="modal-field">
+          <label>Vendas fechadas (qtd)</label>
+          <input type="number" id="v-cas-vendas" placeholder="0" min="0"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="fecharModalVendas()">Cancelar</button>
+      <button class="btn-salvar-vendas" onclick="salvarVendas()">Salvar Vendas</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,0.85);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Buscando dados do Meta Ads...</div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="logo">GM Store</div>
+    <div class="sub">Configure uma vez. Dashboard atualiza automaticamente.</div>
+
+    <div class="setup-divider">Credenciais Meta Ads</div>
+
+    <div class="form-group">
+      <label>Access Token</label>
+      <input type="password" id="input-token" placeholder="EAAxxxxxxxxxxxxxxxx..."/>
+      <div class="form-hint">
+        Obtenha em: <a href="https://developers.facebook.com/tools/explorer/" target="_blank">developers.facebook.com/tools/explorer</a><br>
+        Permissões necessárias: <strong>ads_read</strong> · <strong>ads_management</strong> · <strong>instagram_basic</strong> · <strong>instagram_manage_insights</strong>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ID da Conta de Anúncios</label>
+      <input type="text" id="input-account" placeholder="act_XXXXXXXXXX"/>
+      <div class="form-hint">Gerenciador de Anúncios → URL da página → número após "act_"</div>
+    </div>
+
+    <div class="setup-divider">Filtros de Loja (por nome de campanha)</div>
+
+    <div class="form-group">
+      <label>Palavra-chave — Loja STA</label>
+      <input type="text" id="input-kw-sta" placeholder="STA" value="STA"/>
+    </div>
+    <div class="form-group">
+      <label>Palavra-chave — Loja Castelo</label>
+      <input type="text" id="input-kw-castelo" placeholder="CASTELO" value="CASTELO"/>
+    </div>
+
+    <button class="btn-primary" onclick="salvarConfig()">Salvar e Abrir Dashboard</button>
+
+    <div class="setup-security">
+      <span>🔒</span>
+      <span>Suas credenciais ficam salvas <strong>somente neste navegador</strong>, no seu computador. Nunca são enviadas para fora do Meta.</span>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="logo-area">
+      <h1>GM Store</h1>
+      <span id="header-period">Selecione um período</span>
+    </div>
+    <div class="header-right">
+      <!-- PRESETS -->
+      <div class="date-row">
+        <button class="preset-btn" onclick="setPreset('7d')">7 dias</button>
+        <button class="preset-btn" onclick="setPreset('30d')">30 dias</button>
+        <button class="preset-btn" onclick="setPreset('mes')">Este mês</button>
+        <button class="preset-btn" onclick="setPreset('mesant')">Mês anterior</button>
+        <input type="date" id="date-start" class="date-input"/>
+        <span style="color:#4b5563;font-size:13px;">→</span>
+        <input type="date" id="date-end" class="date-input"/>
+        <button class="btn-fetch" id="btn-fetch" onclick="buscarDados()">Buscar</button>
+      </div>
+      <!-- LOJAS -->
+      <div class="store-filter">
+        <button class="store-btn a-all" id="btn-all" onclick="setLoja('all')">Todas</button>
+        <button class="store-btn" id="btn-sta" onclick="setLoja('sta')" id="btn-sta">STA</button>
+        <button class="store-btn" id="btn-cas" onclick="setLoja('castelo')">Castelo</button>
+      </div>
+      <button class="btn-vendas" id="btn-vendas" onclick="abrirModalVendas()">+ Vendas</button>
+      <button class="btn-export" onclick="window.print()">PDF</button>
+      <button class="btn-settings" onclick="abrirConfig()">⚙ Config</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="error-box" id="error-box"></div>
+
+    <!-- ESTADO VAZIO -->
+    <div id="empty-state" class="empty-state">
+      <div>📊</div>
+      Selecione um período e clique em <strong>Buscar</strong> para carregar os dados.
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div id="content" class="hidden">
+
+      <!-- CARDS GERAIS -->
+      <div class="section-title" id="lbl-geral">Meta Ads — Visão Geral</div>
+      <div class="cards-grid">
+        <div class="card c-blue"><div class="lbl">Investimento</div><div class="val" id="c-invest">—</div><div class="sub" id="c-invest-sub"></div></div>
+        <div class="card"><div class="lbl">Alcance</div><div class="val" id="c-alcance">—</div><div class="sub">Pessoas únicas</div></div>
+        <div class="card"><div class="lbl">Impressões</div><div class="val" id="c-impr">—</div><div class="sub">Total exibições</div></div>
+        <div class="card"><div class="lbl">Cliques no Link</div><div class="val" id="c-clicks">—</div><div class="sub" id="c-ctr-sub"></div></div>
+        <div class="card c-green"><div class="lbl">Conversas WhatsApp</div><div class="val" id="c-conv">—</div><div class="sub" id="c-conv-sub">Todas as lojas</div></div>
+        <div class="card"><div class="lbl">CPM Médio</div><div class="val" id="c-cpm">—</div><div class="sub">Por mil impressões</div></div>
+        <div class="card c-green"><div class="lbl">Custo / Conversa</div><div class="val" id="c-cpc">—</div><div class="sub">Média geral</div></div>
+        <div class="card" id="card-fat-online"><div class="lbl">Faturamento Online</div><div class="val" id="c-fat-online">—</div><div class="sub" id="c-fat-online-sub">Via campanhas Meta</div></div>
+        <div class="card" id="card-fat-total"><div class="lbl">Fat. Total das Lojas</div><div class="val" id="c-fat-total">—</div><div class="sub" id="c-fat-total-sub">STA + Castelo</div></div>
+        <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub">Investido ÷ vendas online</div></div>
+        <div class="card" id="card-roas"><div class="lbl">ROAS</div><div class="val" id="c-roas">—</div><div class="sub" id="c-roas-sub">Fat. online ÷ investimento</div></div>
+      </div>
+
+      <!-- FUNIL -->
+      <div class="section-title">Funil de Conversão</div>
+      <div class="funnel-wrapper">
+        <div class="funnel-visual" id="funil-visual">
+          <!-- gerado via JS -->
+        </div>
+        <div class="funnel-stats" id="funil-stats">
+          <!-- gerado via JS -->
+        </div>
+      </div>
+
+      <!-- LOJAS -->
+      <div class="section-title">Performance por Loja</div>
+      <div class="stores-grid" id="stores-grid">
+        <!-- gerado via JS -->
+      </div>
+
+      <!-- CAMPANHAS -->
+      <div class="section-title">Campanhas</div>
+      <div class="table-box">
+        <h3 id="table-camp-title">Campanhas do período — ranking por eficiência</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Campanha</th><th>Loja</th>
+                <th class="td-r">Investido</th><th class="td-r">Conversas</th>
+                <th class="td-r">Custo/Conv</th><th class="td-r">Alcance</th>
+                <th class="td-r">CPM</th><th class="td-r">CTR</th><th class="td-r">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-camp"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ANÚNCIOS -->
+      <div class="section-title">Anúncios em Destaque</div>
+      <div class="table-box">
+        <h3>Por anúncio — Criativos com melhor e pior performance</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Anúncio</th><th>Campanha</th>
+                <th class="td-r">Investido</th><th class="td-r">Conversas</th>
+                <th class="td-r">Custo/Conv</th><th class="td-r">Alcance</th>
+                <th class="td-r">CTR</th><th class="td-r">CPM</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-ads"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GRÁFICOS -->
+      <div class="charts-row" style="margin-top:16px;">
+        <div class="chart-box"><h3>Investimento por Campanha (R$)</h3><canvas id="ch-invest"></canvas></div>
+        <div class="chart-box"><h3>Custo por Conversa — Ranking (R$)</h3><canvas id="ch-custo"></canvas></div>
+      </div>
+      <div class="charts-row" style="margin-top:16px;">
+        <div class="chart-box"><h3>Conversas por Loja</h3><canvas id="ch-lojas"></canvas></div>
+        <div class="chart-box"><h3>Alcance por Campanha</h3><canvas id="ch-alcance"></canvas></div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="section-title">Alertas Estratégicos</div>
+      <div id="alertas" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────
+let CFG = {};
+let dadosCamp = [];
+let dadosAds = [];
+let lojaAtual = 'all';
+let charts = {};
+
+function normalizeAccount(id) {
+  // Remove espaços, garante prefixo act_
+  id = id.trim().replace(/\s/g, '');
+  if (!id.startsWith('act_')) id = 'act_' + id;
+  return id;
+}
+
+async function salvarConfig() {
+  const token = document.getElementById('input-token').value.trim();
+  const accountRaw = document.getElementById('input-account').value.trim();
+  if (!token || !accountRaw) { alert('Preencha o Token e o ID da conta.'); return; }
+
+  const account = normalizeAccount(accountRaw);
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent = 'Verificando credenciais...';
+  btn.disabled = true;
+
+  // Testa o token antes de salvar
+  try {
+    const testUrl = new URL(`${BASE}/me`);
+    testUrl.searchParams.set('access_token', token);
+    testUrl.searchParams.set('fields', 'name');
+    const res = await fetch(testUrl.toString());
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    // Testa acesso à conta
+    const accUrl = new URL(`${BASE}/${account}`);
+    accUrl.searchParams.set('access_token', token);
+    accUrl.searchParams.set('fields', 'name,currency');
+    const res2 = await fetch(accUrl.toString());
+    const data2 = await res2.json();
+    if (data2.error) throw new Error(`Conta: ${data2.error.message}`);
+
+    CFG = {
+      token, account,
+      kwSta: document.getElementById('input-kw-sta').value.trim() || 'STA',
+      kwCastelo: document.getElementById('input-kw-castelo').value.trim() || 'CASTELO'
+    };
+    localStorage.setItem('gmstore_cfg', JSON.stringify(CFG));
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    setPreset('mesant');
+  } catch(e) {
+    btn.textContent = 'Salvar e Abrir Dashboard';
+    btn.disabled = false;
+    alert('Erro ao verificar credenciais:\n\n' + e.message + '\n\nVerifique o Token e o ID da conta.');
+  }
+}
+
+function abrirConfig() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  if (CFG.token) document.getElementById('input-token').value = CFG.token;
+  if (CFG.account) document.getElementById('input-account').value = CFG.account;
+  if (CFG.kwSta) document.getElementById('input-kw-sta').value = CFG.kwSta;
+  if (CFG.kwCastelo) document.getElementById('input-kw-castelo').value = CFG.kwCastelo;
+}
+
+function carregarConfig() {
+  const saved = localStorage.getItem('gmstore_cfg');
+  if (saved) {
+    CFG = JSON.parse(saved);
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    setPreset('mesant');
+  }
+}
+
+// ─── DATAS ───────────────────────────────────────
+function fmtDate(d) { return d.toISOString().split('T')[0]; }
+function fmtBr(s) { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+
+function setPreset(p) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event && event.target && event.target.classList.add('active');
+  const hoje = new Date();
+  let ini, fim;
+  if (p === '7d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-6); }
+  else if (p === '30d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-29); }
+  else if (p === 'mes') { ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1); fim = new Date(hoje); }
+  else if (p === 'mesant') {
+    ini = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+    fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  }
+  document.getElementById('date-start').value = fmtDate(ini);
+  document.getElementById('date-end').value = fmtDate(fim);
+}
+
+// ─── API META ─────────────────────────────────────
+const BASE = 'https://graph.facebook.com/v19.0';
+const CONV_ACTION = 'onsite_conversion.messaging_conversation_started_7d';
+
+async function apiGet(endpoint, params={}) {
+  const url = new URL(`${BASE}/${endpoint}`);
+  url.searchParams.set('access_token', CFG.token);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v));
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data;
+}
+
+async function paginar(endpoint, params) {
+  let items = [];
+  let data = await apiGet(endpoint, params);
+  items = items.concat(data.data || []);
+  while (data.paging && data.paging.next) {
+    const res = await fetch(data.paging.next);
+    data = await res.json();
+    if (data.error) break;
+    items = items.concat(data.data || []);
+  }
+  return items;
+}
+
+function extrairAction(actions, type) {
+  if (!actions) return 0;
+  const a = actions.find(x => x.action_type === type);
+  return a ? parseFloat(a.value) : 0;
+}
+
+async function buscarDados() {
+  const ini = document.getElementById('date-start').value;
+  const fim = document.getElementById('date-end').value;
+  if (!ini || !fim) { alert('Selecione o período.'); return; }
+
+  mostrarLoading(true, 'Buscando campanhas...');
+  esconderErro();
+
+  try {
+    const camposCamp = 'campaign_name,spend,reach,impressions,inline_link_clicks,cpm,ctr,actions,cost_per_action_type';
+    const camposAds  = 'ad_name,campaign_name,adset_name,spend,reach,impressions,inline_link_clicks,cpm,ctr,actions,cost_per_action_type';
+    const time_range = { since: ini, until: fim };
+
+    // CAMPANHAS
+    mostrarLoading(true, 'Buscando campanhas...');
+    dadosCamp = await paginar(`${CFG.account}/insights`, {
+      fields: camposCamp, time_range, level: 'campaign', limit: 100
+    });
+
+    // ANÚNCIOS
+    mostrarLoading(true, 'Buscando anúncios...');
+    dadosAds = await paginar(`${CFG.account}/insights`, {
+      fields: camposAds, time_range, level: 'ad', limit: 100
+    });
+
+    mostrarLoading(false);
+    renderDashboard(ini, fim);
+
+  } catch(e) {
+    mostrarLoading(false);
+    mostrarErro(e.message);
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────
+function renderDashboard(ini, fim) {
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('content').classList.remove('hidden');
+  document.getElementById('header-period').textContent = `${fmtBr(ini)} → ${fmtBr(fim)}`;
+
+  const camp = filtrarPorLoja(dadosCamp);
+  const ads = filtrarPorLoja(dadosAds);
+
+  // TOTAIS
+  const totals = somarTotais(camp);
+  document.getElementById('c-invest').textContent = 'R$' + fmt(totals.spend);
+  document.getElementById('c-alcance').textContent = fmtN(totals.reach);
+  document.getElementById('c-impr').textContent = fmtN(totals.impressions);
+  document.getElementById('c-clicks').textContent = fmtN(totals.clicks);
+  document.getElementById('c-ctr-sub').textContent = `CTR: ${(totals.clicks/totals.impressions*100||0).toFixed(2)}%`;
+  document.getElementById('c-conv').textContent = fmtN(totals.conv);
+  document.getElementById('c-cpm').textContent = 'R$' + fmt(totals.spend/totals.impressions*1000||0);
+  document.getElementById('c-cpc').textContent = totals.conv > 0 ? 'R$' + fmt(totals.spend/totals.conv) : '—';
+
+  renderFunil(totals);
+  renderLojas(dadosCamp, ini, fim);
+  renderCampanhas(camp);
+  renderAds(ads);
+  renderCharts(camp);
+  renderAlertas(camp, totals);
+  atualizarCardsVendas();
+}
+
+function somarTotais(camp) {
+  return camp.reduce((acc, c) => {
+    acc.spend += parseFloat(c.spend||0);
+    acc.reach += parseInt(c.reach||0);
+    acc.impressions += parseInt(c.impressions||0);
+    acc.clicks += parseInt(c.inline_link_clicks||0);
+    acc.conv += extrairAction(c.actions, CONV_ACTION);
+    return acc;
+  }, {spend:0, reach:0, impressions:0, clicks:0, conv:0});
+}
+
+function filtrarPorLoja(arr) {
+  if (lojaAtual === 'all') return arr;
+  const kw = lojaAtual === 'sta' ? CFG.kwSta : CFG.kwCastelo;
+  return arr.filter(c => (c.campaign_name||'').toUpperCase().includes(kw.toUpperCase()));
+}
+
+function lojaDecamp(nome) {
+  const n = (nome||'').toUpperCase();
+  if (n.includes(CFG.kwSta.toUpperCase())) return 'sta';
+  if (n.includes(CFG.kwCastelo.toUpperCase())) return 'castelo';
+  return 'geral';
+}
+
+// FUNIL
+function renderFunil(t) {
+  const conv = t.conv || 0;
+  const ctrPct = t.impressions > 0 ? (t.clicks/t.impressions*100).toFixed(2) : '—';
+  const convPct = t.clicks > 0 ? (conv/t.clicks*100).toFixed(1) : '—';
+  const cpcConv = conv > 0 ? 'R$'+fmt(t.spend/conv) : '—';
+
+  const vd = carregarVendas(chaveVendas());
+  const totalVendas = vd.vendasOnline || 0;
+  const totalFat = vd.fatOnline || 0;
+  const fatTotal = (vd.sta.fatTotal || 0) + (vd.castelo.fatTotal || 0);
+  const cpvReal = totalVendas > 0 ? t.spend / totalVendas : 0;
+  const txConvVenda = conv > 0 && totalVendas > 0 ? (totalVendas/conv*100).toFixed(1) : null;
+  const vendaLabel = totalVendas > 0 ? fmtN(totalVendas) : '?';
+  const vendaBg = totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#7f1d1d,#991b1b)';
+  const vendaDrop = totalVendas > 0
+    ? `<div class="funnel-drop fd-ok">↓ ${txConvVenda}% das conversas viraram venda</div>`
+    : `<div class="funnel-drop fd-bad">↓ Registre as vendas clicando em "+ Vendas"</div>`;
+
+  document.getElementById('funil-visual').innerHTML = `
+    <div style="width:100%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1d4ed8,#2563eb);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+      <span style="font-size:11px;opacity:0.8;">Alcance</span><span style="font-weight:800;font-size:14px;">${fmtN(t.reach)}</span></div></div>
+    <div class="funnel-connector"></div>
+    <div style="width:88%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1e40af,#3b82f6);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+      <span style="font-size:11px;opacity:0.8;">Impressões</span><span style="font-weight:800;font-size:14px;">${fmtN(t.impressions)}</span></div></div>
+    <div class="funnel-connector"></div>
+    <div class="funnel-drop fd-warn">↓ CTR: ${ctrPct}%</div>
+    <div class="funnel-connector"></div>
+    <div style="width:65%"><div class="funnel-bar" style="background:linear-gradient(90deg,#5b21b6,#7c3aed);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+      <span style="font-size:11px;opacity:0.8;">Cliques no Link</span><span style="font-weight:800;font-size:14px;">${fmtN(t.clicks)}</span></div></div>
+    <div class="funnel-connector"></div>
+    <div class="funnel-drop fd-ok">↓ ${convPct}% converteram em conversa</div>
+    <div class="funnel-connector"></div>
+    <div style="width:40%"><div class="funnel-bar" style="background:linear-gradient(90deg,#065f46,#059669);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+      <span style="font-size:11px;opacity:0.8;">Conversas WA</span><span style="font-weight:800;font-size:14px;">${fmtN(conv)}</span></div></div>
+    <div class="funnel-connector"></div>
+    ${vendaDrop}
+    <div class="funnel-connector"></div>
+    <div style="width:22%"><div class="funnel-bar" style="background:${vendaBg};clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+      <span style="font-size:11px;opacity:0.8;">Vendas</span><span style="font-weight:800;font-size:14px;">${vendaLabel}</span></div></div>`;
+
+  const cpvTexto = cpvReal > 0
+    ? `<span style="color:#69db7c;">R$${fmt(cpvReal)}</span>`
+    : `<span style="color:#ff8787;">Registre as vendas</span>`;
+  const roas = totalFat > 0 && t.spend > 0 ? totalFat / t.spend : 0;
+  const roasColor = roas >= 3 ? '#69db7c' : roas >= 1.5 ? '#748ffc' : '#ff8787';
+  const roasTexto = roas > 0
+    ? `<span style="color:${roasColor};">${roas.toFixed(2)}x</span>`
+    : '—';
+
+  document.getElementById('funil-stats').innerHTML = `
+    <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Custo em cada etapa</div>
+    <div class="fstat" style="border-color:#3b82f6;"><div class="fs-l">Custo por 1.000 pessoas</div><div class="fs-v" style="color:#748ffc;">R$${fmt(t.spend/t.reach*1000||0)}</div></div>
+    <div class="fstat" style="border-color:#7c3aed;"><div class="fs-l">Custo por clique</div><div class="fs-v" style="color:#a78bfa;">${t.clicks>0?'R$'+fmt(t.spend/t.clicks):'—'}</div></div>
+    <div class="fstat" style="border-color:#059669;"><div class="fs-l">Custo por conversa</div><div class="fs-v" style="color:#69db7c;">${cpcConv}</div></div>
+    <div class="fstat" style="border-color:${cpvReal>0?'#059669':'#991b1b'};"><div class="fs-l">Custo por venda</div><div class="fs-v">${cpvTexto}</div></div>
+    <div class="fstat" style="border-color:${roas>=3?'#2f9e44':roas>=1.5?'#3b5bdb':'#991b1b'};"><div class="fs-l">ROAS (fat. online ÷ invest.)</div><div class="fs-v">${roasTexto}</div></div>
+    ${totalFat > 0 ? `
+    <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
+      <strong style="color:#748ffc;">Online:</strong> R$${fmt(vd.fatOnline)}<br>
+      <strong style="color:#69db7c;">STA total:</strong> R$${fmtK(vd.sta.fatTotal)}<br>
+      <strong style="color:#f87171;">Castelo total:</strong> R$${fmtK(vd.castelo.fatTotal)}
+    </div>` : `
+    <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
+      <strong style="color:#fbbf24;">Estimativa:</strong> se 30% das ${fmtN(conv)} conversas fecharem → <strong style="color:#fff;">${fmtN(Math.round(conv*0.3))} vendas</strong> a <strong style="color:#fff;">${conv>0?'R$'+fmt(t.spend/conv/0.3):'—'}</strong> por venda.
+    </div>`}`;
+}
+
+// LOJAS
+function renderLojas(camp, ini, fim) {
+  const sta = camp.filter(c => lojaDecamp(c.campaign_name) === 'sta');
+  const cas = camp.filter(c => lojaDecamp(c.campaign_name) === 'castelo');
+  const ts = somarTotais(sta);
+  const tc = somarTotais(cas);
+
+  if (lojaAtual !== 'castelo' && sta.length === 0 && lojaAtual !== 'sta') {
+    document.getElementById('stores-grid').innerHTML = '<div style="color:#6b7280;font-size:13px;padding:16px;">Nenhuma campanha identificada com as palavras-chave STA / Castelo. Verifique a configuração.</div>';
+    return;
+  }
+
+  let html = '';
+  if (lojaAtual !== 'castelo') {
+    const cpcSta = ts.conv > 0 ? fmt(ts.spend/ts.conv) : '—';
+    html += `<div class="store-card">
+      <div class="store-header" style="background:linear-gradient(135deg,#0f2027,#1a1d27);">
+        <h3 style="color:#60a5fa;">Loja STA</h3>
+        <span class="store-badge" style="background:#1e3a5f;color:#60a5fa;">${sta.length} campanha(s)</span>
+      </div>
+      <div class="store-metrics">
+        <div class="sm"><div class="sl">Investido</div><div class="sv" style="color:#60a5fa;">R$${fmt(ts.spend)}</div><div class="ss">${totPct(ts.spend, somarTotais(camp).spend)}% do total</div></div>
+        <div class="sm"><div class="sl">Conversas</div><div class="sv" style="color:#69db7c;">${fmtN(ts.conv)}</div><div class="ss">${totPct(ts.conv, somarTotais(camp).conv)}% do total</div></div>
+        <div class="sm"><div class="sl">Custo/Conv</div><div class="sv" style="color:#69db7c;">R$${cpcSta}</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(ts.reach)}</div><div class="ss">pessoas</div></div>
+        <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(ts.spend/ts.impressions*1000||0)}</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">CTR</div><div class="sv">${ts.impressions>0?(ts.clicks/ts.impressions*100).toFixed(2):0}%</div><div class="ss"></div></div>
+      </div></div>`;
+  }
+  if (lojaAtual !== 'sta') {
+    const cpcCas = tc.conv > 0 ? fmt(tc.spend/tc.conv) : '—';
+    html += `<div class="store-card">
+      <div class="store-header" style="background:linear-gradient(135deg,#200f0f,#1a1d27);">
+        <h3 style="color:#f87171;">Loja Castelo</h3>
+        <span class="store-badge" style="background:#3a1a1a;color:#f87171;">${cas.length} campanha(s)</span>
+      </div>
+      <div class="store-metrics">
+        <div class="sm"><div class="sl">Investido</div><div class="sv" style="color:#f87171;">R$${fmt(tc.spend)}</div><div class="ss">${totPct(tc.spend, somarTotais(camp).spend)}% do total</div></div>
+        <div class="sm"><div class="sl">Conversas</div><div class="sv" style="color:#f87171;">${fmtN(tc.conv)}</div><div class="ss">${totPct(tc.conv, somarTotais(camp).conv)}% do total</div></div>
+        <div class="sm"><div class="sl">Custo/Conv</div><div class="sv" style="color:#f87171;">R$${cpcCas}</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(tc.reach)}</div><div class="ss">pessoas</div></div>
+        <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(tc.spend/tc.impressions*1000||0)}</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">CTR</div><div class="sv">${tc.impressions>0?(tc.clicks/tc.impressions*100).toFixed(2):0}%</div><div class="ss"></div></div>
+      </div></div>`;
+  }
+  document.getElementById('stores-grid').innerHTML = html || '<div style="color:#6b7280;padding:16px;font-size:13px;">Sem dados para as lojas no período.</div>';
+}
+
+// CAMPANHAS TABLE
+function renderCampanhas(camp) {
+  const sorted = [...camp].sort((a,b) => {
+    const ca = extrairAction(a.actions,CONV_ACTION);
+    const cb = extrairAction(b.actions,CONV_ACTION);
+    const pa = ca>0?parseFloat(a.spend)/ca:9999;
+    const pb = cb>0?parseFloat(b.spend)/cb:9999;
+    return pa-pb;
+  });
+  const totS = sorted.reduce((s,c)=>s+parseFloat(c.spend||0),0);
+  let html = '';
+  sorted.forEach(c => {
+    const conv = extrairAction(c.actions, CONV_ACTION);
+    const spend = parseFloat(c.spend||0);
+    const cpc = conv>0?fmt(spend/conv):'—';
+    const cpm = fmt(parseFloat(c.cpm||0));
+    const ctr = parseFloat(c.ctr||0).toFixed(2);
+    const loja = lojaDecamp(c.campaign_name);
+    const lojaBadge = loja==='sta'?`<span class="badge" style="background:#1e3a5f;color:#60a5fa;">STA</span>`
+                    : loja==='castelo'?`<span class="badge" style="background:#3a1a1a;color:#f87171;">Castelo</span>`
+                    : `<span class="badge by">Geral</span>`;
+    const cpcNum = conv>0?spend/conv:9999;
+    const status = cpcNum<4?`<span class="badge bg">Escalar</span>`
+                 : cpcNum<7?`<span class="badge by">Manter</span>`
+                 : `<span class="badge br">Revisar</span>`;
+    html += `<tr>
+      <td style="color:#e2e8f0;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.campaign_name}</td>
+      <td>${lojaBadge}</td>
+      <td class="td-r" style="color:#94a3b8;">R$${fmt(spend)}</td>
+      <td class="td-r" style="color:#94a3b8;">${conv>0?fmtN(conv):'0'}</td>
+      <td class="td-r" style="color:#748ffc;font-weight:600;">R$${cpc}</td>
+      <td class="td-r" style="color:#94a3b8;">${fmtN(parseInt(c.reach||0))}</td>
+      <td class="td-r" style="color:#94a3b8;">R$${cpm}</td>
+      <td class="td-r" style="color:#94a3b8;">${ctr}%</td>
+      <td class="td-r">${status}</td>
+    </tr>`;
+  });
+  document.getElementById('tbody-camp').innerHTML = html || '<tr><td colspan="9" style="text-align:center;color:#6b7280;padding:20px;">Nenhuma campanha encontrada</td></tr>';
+}
+
+// ADS TABLE
+function renderAds(ads) {
+  const sorted = [...ads].sort((a,b) => parseFloat(b.spend||0)-parseFloat(a.spend||0)).slice(0,15);
+  let html = '';
+  sorted.forEach(a => {
+    const conv = extrairAction(a.actions, CONV_ACTION);
+    const spend = parseFloat(a.spend||0);
+    const cpc = conv>0?fmt(spend/conv):'—';
+    html += `<tr>
+      <td style="color:#e2e8f0;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.ad_name||'—'}</td>
+      <td style="color:#6b7280;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.campaign_name||'—'}</td>
+      <td class="td-r" style="color:#94a3b8;">R$${fmt(spend)}</td>
+      <td class="td-r" style="color:#94a3b8;">${conv>0?fmtN(conv):'0'}</td>
+      <td class="td-r" style="color:#748ffc;font-weight:600;">R$${cpc}</td>
+      <td class="td-r" style="color:#94a3b8;">${fmtN(parseInt(a.reach||0))}</td>
+      <td class="td-r" style="color:#94a3b8;">${parseFloat(a.ctr||0).toFixed(2)}%</td>
+      <td class="td-r" style="color:#94a3b8;">R$${fmt(parseFloat(a.cpm||0))}</td>
+    </tr>`;
+  });
+  document.getElementById('tbody-ads').innerHTML = html || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:20px;">Nenhum anúncio encontrado</td></tr>';
+}
+
+// CHARTS
+function renderCharts(camp) {
+  destroyCharts();
+  const sorted = [...camp].sort((a,b)=>parseFloat(b.spend||0)-parseFloat(a.spend||0)).slice(0,6);
+  const labels = sorted.map(c=>c.campaign_name.length>18?c.campaign_name.substring(0,18)+'…':c.campaign_name);
+  const colors = ['#ef4444','#3b82f6','#6366f1','#22c55e','#f59e0b','#a78bfa'];
+
+  charts.invest = new Chart(document.getElementById('ch-invest'), {
+    type:'bar', data:{ labels, datasets:[{ data:sorted.map(c=>parseFloat(c.spend||0)), backgroundColor:colors, borderRadius:5, borderSkipped:false }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#6b7280'},grid:{color:'#1e2235'}}, y:{ticks:{color:'#6b7280',callback:v=>'R$'+v},grid:{color:'#1e2235'}} } }
+  });
+
+  const forCusto = camp.filter(c=>extrairAction(c.actions,CONV_ACTION)>0)
+    .map(c=>({n:c.campaign_name,v:parseFloat(c.spend||0)/extrairAction(c.actions,CONV_ACTION)}))
+    .sort((a,b)=>a.v-b.v).slice(0,6);
+  charts.custo = new Chart(document.getElementById('ch-custo'), {
+    type:'bar', data:{ labels:forCusto.map(c=>c.n.length>18?c.n.substring(0,18)+'…':c.n), datasets:[{ data:forCusto.map(c=>c.v), backgroundColor:forCusto.map((_,i)=>i===0?'#22c55e':i===forCusto.length-1?'#ef4444':'#3b82f6'), borderRadius:5, borderSkipped:false }] },
+    options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#6b7280',callback:v=>'R$'+v.toFixed(2)},grid:{color:'#1e2235'}}, y:{ticks:{color:'#94a3b8'},grid:{color:'#1e2235'}} } }
+  });
+
+  const sta = camp.filter(c=>lojaDecamp(c.campaign_name)==='sta');
+  const cas = camp.filter(c=>lojaDecamp(c.campaign_name)==='castelo');
+  const ger = camp.filter(c=>lojaDecamp(c.campaign_name)==='geral');
+  charts.lojas = new Chart(document.getElementById('ch-lojas'), {
+    type:'doughnut',
+    data:{ labels:[`STA (${fmtN(somarTotais(sta).conv)})`,`Castelo (${fmtN(somarTotais(cas).conv)})`,`Geral (${fmtN(somarTotais(ger).conv)})`],
+      datasets:[{ data:[somarTotais(sta).conv, somarTotais(cas).conv, somarTotais(ger).conv], backgroundColor:['#3b82f6','#ef4444','#f59e0b'], borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, cutout:'65%', plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:11}}}} }
+  });
+
+  charts.alcance = new Chart(document.getElementById('ch-alcance'), {
+    type:'bar', data:{ labels, datasets:[{ data:sorted.map(c=>parseInt(c.reach||0)), backgroundColor:'#3b5bdb', borderRadius:5, borderSkipped:false }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#6b7280'},grid:{color:'#1e2235'}}, y:{ticks:{color:'#6b7280'},grid:{color:'#1e2235'}} } }
+  });
+}
+
+// ALERTAS
+function renderAlertas(camp, totals) {
+  const alertas = [];
+  // Campanha mais cara
+  const withConv = camp.filter(c=>extrairAction(c.actions,CONV_ACTION)>0);
+  if (withConv.length > 0) {
+    const pior = withConv.reduce((p,c)=>{
+      const cp = parseFloat(p.spend)/extrairAction(p.actions,CONV_ACTION);
+      const cc = parseFloat(c.spend)/extrairAction(c.actions,CONV_ACTION);
+      return cc>cp?c:p;
+    });
+    const melhor = withConv.reduce((p,c)=>{
+      const cp = parseFloat(p.spend)/extrairAction(p.actions,CONV_ACTION);
+      const cc = parseFloat(c.spend)/extrairAction(c.actions,CONV_ACTION);
+      return cc<cp?c:p;
+    });
+    alertas.push({ cor:'#ef4444', bg:'#1e1010', icon:'🔴',
+      msg:`<strong>${pior.campaign_name}</strong> tem o pior custo/conversa: <strong>R$${fmt(parseFloat(pior.spend)/extrairAction(pior.actions,CONV_ACTION))}</strong>. Considere revisar segmentação ou criativo.` });
+    alertas.push({ cor:'#22c55e', bg:'#101e18', icon:'🟢',
+      msg:`<strong>${melhor.campaign_name}</strong> é a mais eficiente: <strong>R$${fmt(parseFloat(melhor.spend)/extrairAction(melhor.actions,CONV_ACTION))}</strong> por conversa. Considere aumentar o orçamento.` });
+  }
+  if (totals.conv === 0) {
+    alertas.push({ cor:'#f59e0b', bg:'#1e1a10', icon:'🟡', msg:'Nenhuma conversa de WhatsApp registrada no período. Verifique se as campanhas de mensagem estão ativas.' });
+  }
+  alertas.push({ cor:'#3b82f6', bg:'#101e30', icon:'🔵', msg:`<strong>${fmtN(totals.conv)}</strong> conversas iniciadas. Integrar o <strong>Kommo CRM</strong> é o próximo passo para calcular custo por venda real.` });
+
+  document.getElementById('alertas').innerHTML = alertas.map(a=>
+    `<div class="alert" style="background:${a.bg};border:1px solid ${a.cor};color:${a.cor};"><span>${a.icon}</span><span style="color:#e2e8f0;">${a.msg}</span></div>`
+  ).join('');
+}
+
+// LOJA FILTER
+function setLoja(l) {
+  lojaAtual = l;
+  document.getElementById('btn-all').className = 'store-btn' + (l==='all'?' a-all':'');
+  document.getElementById('btn-sta').className = 'store-btn' + (l==='sta'?' a-sta':'');
+  document.getElementById('btn-cas').className = 'store-btn' + (l==='castelo'?' a-cas':'');
+  document.getElementById('c-conv-sub').textContent = l==='all'?'Todas as lojas':l==='sta'?'Loja STA':'Loja Castelo';
+  document.getElementById('lbl-geral').textContent = l==='all'?'Meta Ads — Visão Geral':l==='sta'?'Meta Ads — Loja STA':'Meta Ads — Loja Castelo';
+  if (dadosCamp.length > 0) {
+    const ini = document.getElementById('date-start').value;
+    const fim = document.getElementById('date-end').value;
+    renderDashboard(ini, fim);
+  }
+}
+
+// UTILS
+function destroyCharts() { Object.values(charts).forEach(c=>c&&c.destroy()); charts={}; }
+function fmt(n) { return parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtN(n) { return parseInt(n||0).toLocaleString('pt-BR'); }
+function totPct(v, total) { return total>0?Math.round(v/total*100):0; }
+function mostrarLoading(show, txt) {
+  const el = document.getElementById('loading');
+  el.style.display = show ? 'flex' : 'none';
+  if (txt) document.getElementById('loading-text').textContent = txt;
+}
+function mostrarErro(msg) {
+  const el = document.getElementById('error-box');
+  el.style.display = 'block';
+  el.innerHTML = `<strong>Erro ao buscar dados:</strong> ${msg}<br><br>Verifique se o Access Token é válido e tem permissões de <strong>ads_read</strong>.`;
+}
+function esconderErro() { document.getElementById('error-box').style.display='none'; }
+
+// ─── VENDAS ──────────────────────────────────────
+function chaveVendas() {
+  const ini = document.getElementById('date-start').value;
+  return ini ? ini.substring(0,7) : null; // ex: "2026-03"
+}
+
+function carregarVendas(chave) {
+  const all = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+  return all[chave] || {
+    fatOnline: 0, vendasOnline: 0,
+    sta:     { vendas: 0, fatTotal: 0 },
+    castelo: { vendas: 0, fatTotal: 0 }
+  };
+}
+
+function abrirModalVendas() {
+  const ini = document.getElementById('date-start').value;
+  const fim = document.getElementById('date-end').value;
+  if (!ini || !fim) { alert('Selecione o período antes de registrar vendas.'); return; }
+
+  const chave = chaveVendas();
+  const v = carregarVendas(chave);
+
+  document.getElementById('modal-period-label').textContent = `${fmtBr(ini)} → ${fmtBr(fim)}`;
+  document.getElementById('v-fat-online').value     = v.fatOnline    || '';
+  document.getElementById('v-vendas-online').value  = v.vendasOnline || '';
+  document.getElementById('v-sta-fat-total').value  = v.sta.fatTotal  || '';
+  document.getElementById('v-sta-vendas').value     = v.sta.vendas    || '';
+  document.getElementById('v-cas-fat-total').value  = v.castelo.fatTotal || '';
+  document.getElementById('v-cas-vendas').value     = v.castelo.vendas   || '';
+  document.getElementById('modal-vendas').classList.add('open');
+}
+
+function fecharModalVendas() {
+  document.getElementById('modal-vendas').classList.remove('open');
+}
+
+function salvarVendas() {
+  const chave = chaveVendas();
+  const all = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+  all[chave] = {
+    fatOnline:    parseFloat(document.getElementById('v-fat-online').value)    || 0,
+    vendasOnline: parseInt(document.getElementById('v-vendas-online').value)   || 0,
+    sta:     { fatTotal: parseFloat(document.getElementById('v-sta-fat-total').value) || 0, vendas: parseInt(document.getElementById('v-sta-vendas').value) || 0 },
+    castelo: { fatTotal: parseFloat(document.getElementById('v-cas-fat-total').value) || 0, vendas: parseInt(document.getElementById('v-cas-vendas').value) || 0 }
+  };
+  localStorage.setItem('gmstore_vendas', JSON.stringify(all));
+  fecharModalVendas();
+  atualizarCardsVendas();
+  if (dadosCamp.length > 0) {
+    const ini = document.getElementById('date-start').value;
+    const fim = document.getElementById('date-end').value;
+    renderDashboard(ini, fim);
+  }
+}
+
+function atualizarCardsVendas() {
+  const chave = chaveVendas();
+  if (!chave) return;
+  const v = carregarVendas(chave);
+  const fatTotal = v.sta.fatTotal + v.castelo.fatTotal;
+  const totals = somarTotais(filtrarPorLoja(dadosCamp));
+  const cpv = v.vendasOnline > 0 ? totals.spend / v.vendasOnline : 0;
+  const temDados = v.fatOnline > 0 || fatTotal > 0;
+
+  // Card faturamento online
+  const cfo = document.getElementById('card-fat-online');
+  cfo.className = v.fatOnline > 0 ? 'card c-green' : 'card';
+  document.getElementById('c-fat-online').textContent = v.fatOnline > 0 ? 'R$' + fmt(v.fatOnline) : '—';
+  document.getElementById('c-fat-online-sub').textContent = v.vendasOnline > 0 ? `${v.vendasOnline} pedidos via campanhas` : 'Via campanhas Meta';
+
+  // Card faturamento total das lojas
+  const cft = document.getElementById('card-fat-total');
+  cft.className = fatTotal > 0 ? 'card c-green' : 'card';
+  document.getElementById('c-fat-total').textContent = fatTotal > 0 ? 'R$' + fmtK(fatTotal) : '—';
+  document.getElementById('c-fat-total-sub').textContent = fatTotal > 0
+    ? `STA: R$${fmtK(v.sta.fatTotal)} · Castelo: R$${fmtK(v.castelo.fatTotal)}`
+    : 'STA + Castelo';
+
+  // Card custo por venda
+  const ccpv = document.getElementById('card-cpv');
+  ccpv.className = cpv > 0 ? 'card c-blue' : 'card';
+  document.getElementById('c-cpv').textContent = cpv > 0 ? 'R$' + fmt(cpv) : '—';
+
+  // Card ROAS
+  const roas = (v.fatOnline > 0 && totals.spend > 0) ? v.fatOnline / totals.spend : 0;
+  const cardRoas = document.getElementById('card-roas');
+  if (roas > 0) {
+    cardRoas.className = roas >= 3 ? 'card c-green' : roas >= 1.5 ? 'card c-blue' : 'card c-red';
+    document.getElementById('c-roas').textContent = roas.toFixed(2) + 'x';
+    document.getElementById('c-roas-sub').textContent =
+      roas >= 3 ? `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Excelente`
+    : roas >= 1.5 ? `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Bom`
+    : `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Atenção`;
+  } else {
+    cardRoas.className = 'card';
+    document.getElementById('c-roas').textContent = '—';
+    document.getElementById('c-roas-sub').textContent = 'Registre faturamento online';
+  }
+
+  // Botão header
+  document.getElementById('btn-vendas').className = temDados ? 'btn-vendas tem-dados' : 'btn-vendas';
+  document.getElementById('btn-vendas').textContent = temDados ? '✓ Vendas' : '+ Vendas';
+}
+
+function fmtK(n) {
+  n = parseFloat(n || 0);
+  return n >= 1000 ? (n/1000).toFixed(0) + 'k' : fmt(n);
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', e => {
+  const modal = document.getElementById('modal-vendas');
+  if (e.target === modal) fecharModalVendas();
+});
+
+// INIT
+window.onload = () => {
+  // Pré-carrega dados de março 2026 se ainda não existirem
+  const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+  if (!vendas['2026-03']) {
+    vendas['2026-03'] = {
+      fatOnline:    10403,
+      vendasOnline: 0,
+      sta:     { fatTotal: 76000, vendas: 0 },
+      castelo: { fatTotal: 37000, vendas: 0 }
+    };
+    localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
+  }
+  carregarConfig();
+  const hoje = new Date();
+  const ini = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+  const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  document.getElementById('date-start').value = fmtDate(ini);
+  document.getElementById('date-end').value = fmtDate(fim);
+};
+</script>
+</body>
+</html>
