@@ -249,9 +249,77 @@ tbody td{padding:10px 16px;font-size:12px;}
   .funnel-wrapper{flex-direction:column;}
   .funnel-stats{width:100%;}
 }
+
+/* HISTÓRICO */
+.trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:12px;}
+.trend.up{color:#69db7c;background:#1a2a1e;}
+.trend.down{color:#ff8787;background:#2a1a1a;}
+.trend.flat{color:#94a3b8;background:#1e2235;}
+.hist-edit-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.btn-hist-edit{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #748ffc;background:#1e2a4a;color:#748ffc;font-family:inherit;transition:all 0.2s;}
+.btn-hist-edit:hover{background:#3b5bdb;color:#fff;border-color:#3b5bdb;}
+.mom-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
+.mom-card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:14px 16px;}
+.mom-card .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.mom-card .val{font-size:20px;font-weight:800;color:#fff;}
+.mom-card .compare{font-size:11px;color:#6b7280;margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.mom-card .hist-note{font-size:10px;color:#4b5563;margin-top:3px;}
+.modal-hist-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hist-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#748ffc;margin:14px 0 8px;}
 </style>
 </head>
 <body>
+
+<!-- MODAL HISTÓRICO -->
+<div class="modal-overlay" id="modal-historico">
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">Atualizar Dados Mensais</div>
+    <div class="modal-sub">Preencha com os dados passados pelo comercial ao fechar o mês.</div>
+    <div style="margin-bottom:16px;">
+      <div class="modal-field">
+        <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Mês de Referência</label>
+        <select id="hist-mes-select" onchange="preencherFormHistorico()" style="width:100%;background:#12151e;border:1px solid #2d3148;border-radius:8px;padding:10px 14px;font-size:13px;color:#e2e8f0;outline:none;font-family:inherit;">
+          <option value="2025-10">Outubro de 2025</option>
+          <option value="2025-11">Novembro de 2025</option>
+          <option value="2025-12">Dezembro de 2025</option>
+          <option value="2026-01">Janeiro de 2026</option>
+          <option value="2026-02">Fevereiro de 2026</option>
+          <option value="2026-03">Março de 2026</option>
+          <option value="2026-04">Abril de 2026</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:#12151e;border-radius:10px;padding:16px;">
+      <div class="hist-section-label">Resultados Gerais</div>
+      <div class="modal-hist-grid">
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Leads Novos</label><input type="number" id="h-leads" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Agendamentos</label><input type="number" id="h-agend" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Vendas Fechadas</label><input type="number" id="h-vendas" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Faturamento Total (R$)</label><input type="number" id="h-fat" min="0" step="0.01" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Ticket Médio (R$)</label><input type="number" id="h-ticket" min="0" step="0.01" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+      </div>
+      <div class="hist-section-label" style="color:#60a5fa;">Loja Santa Luzia (STA)</div>
+      <div class="modal-hist-grid">
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Faturamento STA (R$)</label><input type="number" id="h-fat-sta" min="0" step="0.01" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Leads STA</label><input type="number" id="h-leads-sta" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+      </div>
+      <div class="hist-section-label" style="color:#f87171;">Loja Castelo</div>
+      <div class="modal-hist-grid">
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Faturamento Castelo (R$)</label><input type="number" id="h-fat-castelo" min="0" step="0.01" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Leads Castelo</label><input type="number" id="h-leads-castelo" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+      </div>
+      <div class="hist-section-label" style="color:#748ffc;">Online (Meta Ads)</div>
+      <div class="modal-hist-grid">
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Faturamento Online (R$)</label><input type="number" id="h-fat-online" min="0" step="0.01" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+        <div class="modal-field"><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:5px;">Leads Online</label><input type="number" id="h-leads-online" min="0" style="width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:7px;padding:9px 12px;font-size:14px;font-weight:600;color:#fff;outline:none;font-family:inherit;"/></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-salvar-vendas" onclick="salvarHistorico()">Salvar</button>
+      <button class="btn-cancelar" onclick="fecharModalHistorico()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL VENDAS -->
 <div class="modal-overlay" id="modal-vendas">
@@ -489,6 +557,24 @@ tbody td{padding:10px 16px;font-size:12px;}
       <div class="section-title">Alertas Estratégicos</div>
       <div id="alertas" style="display:flex;flex-direction:column;gap:10px;"></div>
 
+      <!-- HISTÓRICO MENSAL -->
+      <div class="section-title" style="margin-top:28px;">Histórico Mensal — Resultados do Comercial</div>
+      <div class="hist-edit-row">
+        <span style="font-size:12px;color:#6b7280;">Dados informados pelo comercial · Atualize ao fechar cada mês</span>
+        <button class="btn-hist-edit" onclick="abrirModalHistorico()">+ Atualizar Mês</button>
+      </div>
+      <!-- Cards MoM -->
+      <div class="mom-grid" id="hist-mom-grid"></div>
+      <!-- Gráficos Histórico -->
+      <div class="charts-row" style="margin-top:0;">
+        <div class="chart-box"><h3>Faturamento por Mês — por Loja (R$)</h3><canvas id="ch-hist-fat"></canvas></div>
+        <div class="chart-box"><h3>Leads por Mês — por Loja</h3><canvas id="ch-hist-leads"></canvas></div>
+      </div>
+      <div class="charts-row" style="margin-top:16px;">
+        <div class="chart-box"><h3>Vendas & Agendamentos por Mês</h3><canvas id="ch-hist-vendas"></canvas></div>
+        <div class="chart-box"><h3>Ticket Médio por Mês (R$)</h3><canvas id="ch-hist-ticket"></canvas></div>
+      </div>
+
     </div><!-- /content -->
   </div>
 </div>
@@ -500,6 +586,7 @@ let dadosCamp = [];
 let dadosAds = [];
 let lojaAtual = 'all';
 let charts = {};
+let chartsHist = {};
 
 function normalizeAccount(id) {
   // Remove espaços, garante prefixo act_
@@ -684,6 +771,7 @@ function renderDashboard(ini, fim) {
   renderCharts(camp);
   renderAlertas(camp, totals);
   atualizarCardsVendas();
+  renderHistorico();
 }
 
 function somarTotais(camp) {
@@ -1092,15 +1180,182 @@ function atualizarCardsVendas() {
   document.getElementById('btn-vendas').textContent = temDados ? '✓ Vendas' : '+ Vendas';
 }
 
+// ─── HISTÓRICO MENSAL ──────────────────────────────
+const HISTORICO_INICIAL = {
+  '2025-10': { leads:221, agendamentos:14, vendas:14, faturamento:21184, ticketMedio:1513,  fatSTA:13300, fatCastelo:6634, fatOnline:1250, leadsSTA:9, leadsCastelo:4, leadsOnline:1 },
+  '2025-11': { leads:590, agendamentos:17, vendas:21, faturamento:18904, ticketMedio:900,   fatSTA:9355,  fatCastelo:6279, fatOnline:2470, leadsSTA:9, leadsCastelo:7, leadsOnline:5 },
+  '2025-12': { leads:402, agendamentos:26, vendas:26, faturamento:22874, ticketMedio:879,   fatSTA:16030, fatCastelo:4399, fatOnline:1175, leadsSTA:17,leadsCastelo:6, leadsOnline:3 },
+  '2026-01': { leads:50,  agendamentos:20, vendas:19, faturamento:13252, ticketMedio:697,   fatSTA:8015,  fatCastelo:3942, fatOnline:1295, leadsSTA:12,leadsCastelo:5, leadsOnline:2 },
+  '2026-02': { leads:52,  agendamentos:13, vendas:13, faturamento:4498,  ticketMedio:346,   fatSTA:2961,  fatCastelo:501,  fatOnline:1036, leadsSTA:8, leadsCastelo:2, leadsOnline:3 },
+  '2026-03': { leads:107, agendamentos:17, vendas:14, faturamento:10403, ticketMedio:743,   fatSTA:5741,  fatCastelo:3872, fatOnline:790,  leadsSTA:8, leadsCastelo:5, leadsOnline:1 },
+  '2026-04': { leads:54,  agendamentos:7,  vendas:4,  faturamento:3035,  ticketMedio:758,   fatSTA:1310,  fatCastelo:0,    fatOnline:1725, leadsSTA:1, leadsCastelo:0, leadsOnline:3 },
+};
+const MESES_PT = {'2025-10':'Out/25','2025-11':'Nov/25','2025-12':'Dez/25','2026-01':'Jan/26','2026-02':'Fev/26','2026-03':'Mar/26','2026-04':'Abr/26'};
+
+function carregarHistorico() {
+  const saved = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
+  return Object.assign({}, HISTORICO_INICIAL, saved);
+}
+
+function renderHistorico() {
+  const hist = carregarHistorico();
+  const meses = Object.keys(MESES_PT);
+  renderMoMCards(hist, meses);
+  renderHistCharts(hist, meses);
+}
+
+function trendBadge(atual, anterior) {
+  if (!anterior || anterior === 0) return '<span class="trend flat">—</span>';
+  const pct = (atual - anterior) / anterior * 100;
+  const abs = Math.abs(pct).toFixed(1);
+  if (pct > 0.5)  return `<span class="trend up">▲ ${abs}%</span>`;
+  if (pct < -0.5) return `<span class="trend down">▼ ${abs}%</span>`;
+  return '<span class="trend flat">= 0%</span>';
+}
+
+function renderMoMCards(hist, meses) {
+  const grid = document.getElementById('hist-mom-grid');
+  if (!grid) return;
+  const comDados = meses.filter(m => hist[m] && hist[m].faturamento > 0);
+  if (comDados.length < 2) {
+    grid.innerHTML = '<div style="color:#6b7280;font-size:12px;padding:8px 0;">Adicione dados de pelo menos 2 meses para ver o comparativo.</div>';
+    return;
+  }
+  const i = comDados.length - 1;
+  const ult = hist[comDados[i]];
+  const pen = hist[comDados[i-1]];
+  const lUlt = MESES_PT[comDados[i]];
+  const lPen = MESES_PT[comDados[i-1]];
+  const metricas = [
+    { label:'Faturamento',  val:ult.faturamento,  prev:pen.faturamento,  display: v=>'R$'+fmtK(v) },
+    { label:'Leads',        val:ult.leads,        prev:pen.leads,        display: v=>fmtN(v)+' leads' },
+    { label:'Vendas',       val:ult.vendas,       prev:pen.vendas,       display: v=>v+' vendas' },
+    { label:'Ticket Médio', val:ult.ticketMedio,  prev:pen.ticketMedio,  display: v=>'R$'+fmt(v) },
+  ];
+  grid.innerHTML = metricas.map(m => `
+    <div class="mom-card">
+      <div class="lbl">${m.label}</div>
+      <div class="val">${m.display(m.val)}</div>
+      <div class="compare">${trendBadge(m.val,m.prev)}<span>vs ${m.display(m.prev)} (${lPen})</span></div>
+      <div class="hist-note">${lUlt}</div>
+    </div>`).join('');
+}
+
+function renderHistCharts(hist, meses) {
+  Object.values(chartsHist).forEach(c => c && c.destroy());
+  chartsHist = {};
+  const labels = meses.map(m => MESES_PT[m]);
+  const gridOpts = { color:'#1e2235' };
+  const tickOpts = { color:'#6b7280', font:{ size:10 } };
+  const baseScales = { x:{ grid:gridOpts, ticks:tickOpts }, y:{ grid:gridOpts, ticks:tickOpts } };
+  const baseLegend = { display:true, labels:{ color:'#94a3b8', font:{ size:11 }, boxWidth:12 } };
+
+  // Faturamento por loja (stacked bar)
+  chartsHist.fat = new Chart(document.getElementById('ch-hist-fat'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'STA',     data:meses.map(m=>hist[m]?.fatSTA||0),     backgroundColor:'#3b82f6', borderRadius:4 },
+      { label:'Castelo', data:meses.map(m=>hist[m]?.fatCastelo||0), backgroundColor:'#ef4444', borderRadius:4 },
+      { label:'Online',  data:meses.map(m=>hist[m]?.fatOnline||0),  backgroundColor:'#748ffc', borderRadius:4 },
+    ]},
+    options:{ responsive:true, plugins:{ legend:baseLegend },
+      scales:{ x:{...baseScales.x, stacked:true}, y:{...baseScales.y, stacked:true, ticks:{...tickOpts, callback:v=>'R$'+fmtK(v)}} } }
+  });
+
+  // Leads por loja (stacked bar)
+  chartsHist.leads = new Chart(document.getElementById('ch-hist-leads'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'STA',     data:meses.map(m=>hist[m]?.leadsSTA||0),     backgroundColor:'#3b82f6', borderRadius:4 },
+      { label:'Castelo', data:meses.map(m=>hist[m]?.leadsCastelo||0), backgroundColor:'#ef4444', borderRadius:4 },
+      { label:'Online',  data:meses.map(m=>hist[m]?.leadsOnline||0),  backgroundColor:'#748ffc', borderRadius:4 },
+    ]},
+    options:{ responsive:true, plugins:{ legend:baseLegend },
+      scales:{ x:{...baseScales.x, stacked:true}, y:{...baseScales.y, stacked:true} } }
+  });
+
+  // Vendas & Agendamentos (grouped bar)
+  chartsHist.vendas = new Chart(document.getElementById('ch-hist-vendas'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Agendamentos', data:meses.map(m=>hist[m]?.agendamentos||0), backgroundColor:'#fbbf24', borderRadius:4 },
+      { label:'Vendas',       data:meses.map(m=>hist[m]?.vendas||0),       backgroundColor:'#69db7c', borderRadius:4 },
+    ]},
+    options:{ responsive:true, plugins:{ legend:baseLegend }, scales:baseScales }
+  });
+
+  // Ticket Médio (line)
+  chartsHist.ticket = new Chart(document.getElementById('ch-hist-ticket'), {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'Ticket Médio',
+      data:meses.map(m=>hist[m]?.ticketMedio||0),
+      borderColor:'#748ffc', backgroundColor:'rgba(116,143,252,0.1)',
+      pointBackgroundColor:'#748ffc', pointRadius:5, tension:0.3, fill:true,
+    }]},
+    options:{ responsive:true, plugins:{ legend:baseLegend },
+      scales:{ ...baseScales, y:{ ...baseScales.y, ticks:{...tickOpts, callback:v=>'R$'+fmt(v)}} } }
+  });
+}
+
+function abrirModalHistorico() {
+  const meses = Object.keys(MESES_PT);
+  document.getElementById('hist-mes-select').value = meses[meses.length - 1];
+  preencherFormHistorico();
+  document.getElementById('modal-historico').classList.add('open');
+}
+
+function fecharModalHistorico() {
+  document.getElementById('modal-historico').classList.remove('open');
+}
+
+function preencherFormHistorico() {
+  const mes = document.getElementById('hist-mes-select').value;
+  const hist = carregarHistorico();
+  const d = hist[mes] || {};
+  document.getElementById('h-leads').value       = d.leads        || '';
+  document.getElementById('h-agend').value        = d.agendamentos || '';
+  document.getElementById('h-vendas').value       = d.vendas       || '';
+  document.getElementById('h-fat').value          = d.faturamento  || '';
+  document.getElementById('h-ticket').value       = d.ticketMedio  || '';
+  document.getElementById('h-fat-sta').value      = d.fatSTA       || '';
+  document.getElementById('h-leads-sta').value    = d.leadsSTA     || '';
+  document.getElementById('h-fat-castelo').value  = d.fatCastelo   || '';
+  document.getElementById('h-leads-castelo').value= d.leadsCastelo || '';
+  document.getElementById('h-fat-online').value   = d.fatOnline    || '';
+  document.getElementById('h-leads-online').value = d.leadsOnline  || '';
+}
+
+function salvarHistorico() {
+  const mes = document.getElementById('hist-mes-select').value;
+  const hist = carregarHistorico();
+  hist[mes] = {
+    leads:       parseFloat(document.getElementById('h-leads').value)        || 0,
+    agendamentos:parseFloat(document.getElementById('h-agend').value)         || 0,
+    vendas:      parseFloat(document.getElementById('h-vendas').value)        || 0,
+    faturamento: parseFloat(document.getElementById('h-fat').value)           || 0,
+    ticketMedio: parseFloat(document.getElementById('h-ticket').value)        || 0,
+    fatSTA:      parseFloat(document.getElementById('h-fat-sta').value)       || 0,
+    leadsSTA:    parseFloat(document.getElementById('h-leads-sta').value)     || 0,
+    fatCastelo:  parseFloat(document.getElementById('h-fat-castelo').value)   || 0,
+    leadsCastelo:parseFloat(document.getElementById('h-leads-castelo').value) || 0,
+    fatOnline:   parseFloat(document.getElementById('h-fat-online').value)    || 0,
+    leadsOnline: parseFloat(document.getElementById('h-leads-online').value)  || 0,
+  };
+  localStorage.setItem('gmstore_historico', JSON.stringify(hist));
+  fecharModalHistorico();
+  renderHistorico();
+}
+
 function fmtK(n) {
   n = parseFloat(n || 0);
   return n >= 1000 ? (n/1000).toFixed(0) + 'k' : fmt(n);
 }
 
-// Fechar modal ao clicar fora
+// Fechar modais ao clicar fora
 document.addEventListener('click', e => {
-  const modal = document.getElementById('modal-vendas');
-  if (e.target === modal) fecharModalVendas();
+  if (e.target === document.getElementById('modal-vendas'))    fecharModalVendas();
+  if (e.target === document.getElementById('modal-historico')) fecharModalHistorico();
 });
 
 // INIT
@@ -1116,6 +1371,11 @@ window.onload = () => {
     };
     localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
   }
+  // Pré-carrega histórico sem sobrescrever dados já editados pelo usuário
+  const histSalvo = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
+  const histMerge = Object.assign({}, HISTORICO_INICIAL, histSalvo);
+  localStorage.setItem('gmstore_historico', JSON.stringify(histMerge));
+
   carregarConfig();
   const hoje = new Date();
   const ini = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
