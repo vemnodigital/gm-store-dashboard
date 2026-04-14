@@ -471,9 +471,15 @@ tbody td{padding:10px 16px;font-size:12px;}
         <button class="preset-btn" onclick="setPreset('30d')">30 dias</button>
         <button class="preset-btn" onclick="setPreset('mes')">Este mês</button>
         <button class="preset-btn" onclick="setPreset('mesant')">Mês anterior</button>
-        <input type="date" id="date-start" class="date-input"/>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;" title="Clique para escolher data inicial">
+          <span style="font-size:13px;">📅</span>
+          <input type="date" id="date-start" class="date-input" style="cursor:pointer;"/>
+        </label>
         <span style="color:#4b5563;font-size:13px;">→</span>
-        <input type="date" id="date-end" class="date-input"/>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;" title="Clique para escolher data final">
+          <span style="font-size:13px;">📅</span>
+          <input type="date" id="date-end" class="date-input" style="cursor:pointer;"/>
+        </label>
         <button class="btn-fetch" id="btn-fetch" onclick="buscarDados()">Buscar</button>
       </div>
       <!-- LOJAS -->
@@ -1970,21 +1976,18 @@ document.addEventListener('click', e => {
 
 // INIT
 window.onload = () => {
-  // Pré-carrega vendas de todos os meses históricos usando dados da planilha
+  // Pré-carrega e atualiza vendas de todos os meses históricos usando dados da planilha
   const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
-  let atualizado = false;
   Object.entries(HISTORICO_INICIAL).forEach(([mes, h]) => {
-    if (!vendas[mes]) {
-      vendas[mes] = {
-        fatOnline:    h.faturamento  || 0,  // faturamento total (STA + Castelo + Online)
-        vendasOnline: h.leadsOnline  || 0,
-        sta:     { fatTotal: h.fatSTA     || 0, vendas: h.leadsSTA     || 0 },
-        castelo: { fatTotal: h.fatCastelo || 0, vendas: h.leadsCastelo || 0 },
-      };
-      atualizado = true;
-    }
+    const ex = vendas[mes] || {};
+    vendas[mes] = {
+      fatOnline:    h.faturamento   || 0,  // sempre usa faturamento total (STA + Castelo + Online)
+      vendasOnline: ex.vendasOnline || h.leadsOnline  || 0,
+      sta:     ex.sta     || { fatTotal: h.fatSTA     || 0, vendas: h.leadsSTA     || 0 },
+      castelo: ex.castelo || { fatTotal: h.fatCastelo || 0, vendas: h.leadsCastelo || 0 },
+    };
   });
-  if (atualizado) localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
+  localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
   // Pré-carrega histórico sem sobrescrever dados já editados pelo usuário
   const histSalvo = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
   const histMerge = Object.assign({}, HISTORICO_INICIAL, histSalvo);
