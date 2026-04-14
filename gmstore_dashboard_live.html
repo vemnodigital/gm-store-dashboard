@@ -1074,11 +1074,11 @@ function renderFunil(t) {
     <div class="fstat" style="border-color:#0ea5e9;"><div class="fs-l">Agendamentos (mês)</div><div class="fs-v" style="color:#38bdf8;">${agend > 0 ? agend : '—'}</div></div>
     <div class="fstat" style="border-color:${cpvReal>0?'#059669':'#991b1b'};"><div class="fs-l">Custo por venda (${totalVendas} vendas)</div><div class="fs-v">${cpvTexto}</div></div>
     <div class="fstat" style="border-color:${roas>=3?'#2f9e44':roas>=1.5?'#3b5bdb':'#991b1b'};"><div class="fs-l">ROAS (fat. total ÷ invest.)</div><div class="fs-v">${roasTexto}</div></div>
-    ${totalFat > 0 ? `
+    ${vd.fatOnline > 0 ? `
     <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
-      <strong style="color:#748ffc;">Online:</strong> R$${fmt(vd.fatOnline)}<br>
-      <strong style="color:#69db7c;">STA total:</strong> R$${fmtK(vd.sta.fatTotal)}<br>
-      <strong style="color:#f87171;">Castelo total:</strong> R$${fmtK(vd.castelo.fatTotal)}
+      <strong style="color:#69db7c;">STA:</strong> R$${fmtK(vd.sta.fatTotal)} · ${vd.sta.vendas} vendas<br>
+      <strong style="color:#f87171;">Castelo:</strong> R$${fmtK(vd.castelo.fatTotal)} · ${vd.castelo.vendas} vendas<br>
+      <strong style="color:#748ffc;">Entrega:</strong> R$${fmtK(vd.fatOnline - vd.sta.fatTotal - vd.castelo.fatTotal)} · ${vd.vendasOnline} vendas
     </div>` : `
     <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
       <strong style="color:#fbbf24;">Estimativa:</strong> se 30% das ${fmtN(conv)} conversas fecharem → <strong style="color:#fff;">${fmtN(Math.round(conv*0.3))} vendas</strong> a <strong style="color:#fff;">${conv>0?'R$'+fmt(t.spend/conv/0.3):'—'}</strong> por venda.
