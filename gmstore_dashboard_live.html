@@ -612,6 +612,20 @@ tbody td{padding:10px 16px;font-size:12px;}
     <!-- STATUS CARREGAMENTO -->
     <div id="analise-invest-status" style="font-size:12px;color:#748ffc;padding:10px 0;"></div>
 
+    <!-- ANÁLISE PERIOD SELECTOR -->
+    <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#6b7280;font-weight:600;">Período da análise:</span>
+      <button class="preset-btn" id="ap-30d" onclick="setAnalisePreset('30d')">30 dias</button>
+      <button class="preset-btn" id="ap-90d" onclick="setAnalisePreset('90d')">90 dias</button>
+      <button class="preset-btn active" id="ap-6m" onclick="setAnalisePreset('6m')">6 meses</button>
+      <button class="preset-btn" id="ap-1a" onclick="setAnalisePreset('1a')">1 ano</button>
+      <input type="date" id="analise-date-start" class="date-input"/>
+      <span style="color:#4b5563;font-size:13px;">→</span>
+      <input type="date" id="analise-date-end" class="date-input"/>
+      <button class="btn-fetch" id="btn-analise-fetch" onclick="buscarDadosAnalise()">Buscar</button>
+      <span id="analise-fetch-status" style="font-size:12px;color:#748ffc;"></span>
+    </div>
+
     <!-- INSIGHTS AUTOMÁTICOS -->
     <div class="section-title" style="margin-top:4px;">Insights Estratégicos — O que os dados dizem</div>
     <div id="analise-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
@@ -642,7 +656,7 @@ tbody td{padding:10px 16px;font-size:12px;}
     </div>
     <div id="analise-campanhas-empty" class="empty-state" style="display:none;padding:24px;">
       <div style="font-size:20px;margin-bottom:8px;">📡</div>
-      Busque dados no período desejado (aba Performance) para ver o ranking de campanhas.
+      Selecione o período acima e clique em <strong>Buscar</strong> para ver o ranking de campanhas.
     </div>
     <div class="table-box" id="analise-campanhas-box">
       <h3>Ranqueadas por custo/conversa — menor é melhor</h3>
@@ -660,11 +674,33 @@ tbody td{padding:10px 16px;font-size:12px;}
       </div>
     </div>
 
+    <!-- CONJUNTOS DE ANÚNCIOS -->
+    <div class="section-title" style="margin-top:24px;">Conjuntos de Anúncios — Análise de Público</div>
+    <div id="analise-adsets-empty" class="empty-state" style="display:none;padding:24px;">
+      <div style="font-size:20px;margin-bottom:8px;">👥</div>
+      Busque dados para ver a análise de conjuntos.
+    </div>
+    <div class="table-box" id="analise-adsets-box">
+      <h3>Ranqueados por custo/conversa — Frequência alta indica público saturado</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Conjunto</th><th>Loja</th>
+              <th class="td-r">Investido</th><th class="td-r">Conversas</th>
+              <th class="td-r">Custo/Conv</th><th class="td-r">Frequência</th><th class="td-r">CTR</th><th class="td-r">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-analise-adsets"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- MELHORES CRIATIVOS -->
     <div class="section-title" style="margin-top:24px;">Melhores Criativos — Período Selecionado</div>
     <div id="analise-criativos-empty" class="empty-state" style="display:none;padding:24px;">
       <div style="font-size:20px;margin-bottom:8px;">🎨</div>
-      Busque dados no período desejado (aba Performance) para ver o ranking de criativos.
+      Selecione o período acima e clique em <strong>Buscar</strong> para ver o ranking de criativos.
     </div>
     <div class="table-box" id="analise-criativos-box">
       <h3>Ranqueados por eficiência — destaque os que funcionam, pause os que não funcionam</h3>
@@ -674,7 +710,7 @@ tbody td{padding:10px 16px;font-size:12px;}
             <tr>
               <th>#</th><th>Anúncio</th><th>Campanha</th>
               <th class="td-r">Investido</th><th class="td-r">Conversas</th>
-              <th class="td-r">Custo/Conv</th><th class="td-r">CTR</th><th class="td-r">Resultado</th>
+              <th class="td-r">Custo/Conv</th><th class="td-r">CTR</th><th class="td-r">Frequência</th><th class="td-r">Resultado</th>
             </tr>
           </thead>
           <tbody id="tbody-analise-criativos"></tbody>
@@ -785,6 +821,20 @@ function setPreset(p) {
   document.getElementById('date-end').value = fmtDate(fim);
 }
 
+function setAnalisePreset(p) {
+  document.querySelectorAll('#ap-30d,#ap-90d,#ap-6m,#ap-1a').forEach(b => b.classList.remove('active'));
+  const btnMap = {'30d':'#ap-30d','90d':'#ap-90d','6m':'#ap-6m','1a':'#ap-1a'};
+  if (btnMap[p]) document.querySelector(btnMap[p]).classList.add('active');
+  const hoje = new Date();
+  let ini;
+  if (p === '30d') { ini = new Date(hoje); ini.setDate(ini.getDate()-29); }
+  else if (p === '90d') { ini = new Date(hoje); ini.setDate(ini.getDate()-89); }
+  else if (p === '6m') { ini = new Date(hoje); ini.setMonth(ini.getMonth()-6); }
+  else if (p === '1a') { ini = new Date(hoje); ini.setFullYear(ini.getFullYear()-1); }
+  document.getElementById('analise-date-start').value = fmtDate(ini);
+  document.getElementById('analise-date-end').value = fmtDate(hoje);
+}
+
 // ─── API META ─────────────────────────────────────
 const BASE = 'https://graph.facebook.com/v19.0';
 const CONV_ACTION = 'onsite_conversion.messaging_conversation_started_7d';
@@ -850,6 +900,40 @@ async function buscarDados() {
     mostrarLoading(false);
     mostrarErro(e.message);
   }
+}
+
+async function buscarDadosAnalise() {
+  const ini = document.getElementById('analise-date-start').value;
+  const fim = document.getElementById('analise-date-end').value;
+  if (!ini || !fim) { alert('Selecione o período.'); return; }
+  if (!CFG.token || !CFG.account) { alert('Configure o token e conta na aba Performance primeiro.'); return; }
+
+  const btn = document.getElementById('btn-analise-fetch');
+  const status = document.getElementById('analise-fetch-status');
+  btn.disabled = true;
+  status.textContent = 'Buscando campanhas...';
+
+  const camposcamp = 'campaign_name,spend,reach,impressions,inline_link_clicks,cpm,ctr,frequency,actions,cost_per_action_type';
+  const camposAdsets = 'adset_name,campaign_name,spend,reach,impressions,inline_link_clicks,cpm,ctr,frequency,actions,cost_per_action_type';
+  const camposAds = 'ad_name,campaign_name,spend,reach,impressions,inline_link_clicks,cpm,ctr,frequency,actions,cost_per_action_type';
+  const time_range = { since: ini, until: fim };
+
+  try {
+    dadosAnalisecamp = await paginar(`${CFG.account}/insights`, { fields: camposcamp, time_range, level: 'campaign', limit: 100 });
+    status.textContent = 'Buscando conjuntos...';
+    dadosAnaliseAdsets = await paginar(`${CFG.account}/insights`, { fields: camposAdsets, time_range, level: 'adset', limit: 100 });
+    status.textContent = 'Buscando criativos...';
+    dadosAnaliseAds = await paginar(`${CFG.account}/insights`, { fields: camposAds, time_range, level: 'ad', limit: 100 });
+    status.textContent = '';
+    document.getElementById('analise-period-label').textContent = `(${fmtBr(ini)} → ${fmtBr(fim)})`;
+    renderAnaliseCampanhas();
+    renderAnaliseAdsets();
+    renderAnaliseCriativos();
+    renderInsightsAnalise();
+  } catch(e) {
+    status.textContent = 'Erro: ' + e.message;
+  }
+  btn.disabled = false;
 }
 
 // ─── RENDER ───────────────────────────────────────
@@ -1474,6 +1558,9 @@ function setTab(tab) {
 // ─── ANÁLISE ESTRATÉGICA ──────────────────────────
 let chartsAnalise = {};
 let investimentoHistorico = {}; // cache do spend mensal buscado da API
+let dadosAnalisecamp = [];
+let dadosAnaliseAdsets = [];
+let dadosAnaliseAds = [];
 
 const MESES_RANGES = {
   '2025-10': { since:'2025-10-01', until:'2025-10-31' },
@@ -1512,16 +1599,16 @@ async function buscarInvestimentoHistorico() {
 }
 
 async function renderAnalise() {
+  // Initialize period selector on first open
+  if (!document.getElementById('analise-date-start').value) {
+    setAnalisePreset('6m');
+  }
   renderInsightsAnalise();
   renderRankingMeses();
   renderAnaliseCharts();
   renderAnaliseCampanhas();
+  renderAnaliseAdsets();
   renderAnaliseCriativos();
-  const ini = document.getElementById('date-start').value;
-  const fim = document.getElementById('date-end').value;
-  if (ini && fim) {
-    document.getElementById('analise-period-label').textContent = `(${fmtBr(ini)} → ${fmtBr(fim)})`;
-  }
   // Busca investimento histórico se ainda não foi carregado
   if (Object.keys(investimentoHistorico).length === 0) {
     await buscarInvestimentoHistorico();
@@ -1569,8 +1656,8 @@ function renderInsightsAnalise() {
     }
   }
 
-  if (dadosCamp && dadosCamp.length > 0) {
-    const comConv = dadosCamp.filter(c => extrairAction(c.actions, CONV_ACTION) > 0)
+  if (dadosAnalisecamp && dadosAnalisecamp.length > 0) {
+    const comConv = dadosAnalisecamp.filter(c => extrairAction(c.actions, CONV_ACTION) > 0)
       .map(c => ({ nome: c.campaign_name, cpc: parseFloat(c.spend||0) / extrairAction(c.actions, CONV_ACTION) }))
       .sort((a,b) => a.cpc - b.cpc);
     if (comConv.length > 0) {
@@ -1581,6 +1668,17 @@ function renderInsightsAnalise() {
       const worst = comConv[comConv.length - 1];
       insights.push({ type:'warn', icon:'🔻', text:`Campanha menos eficiente: <strong>${worst.nome}</strong> — Custo/Conversa de <strong>R$${fmt(worst.cpc)}</strong>. Considere pausar ou revisar o criativo.` });
     }
+  }
+
+  // Frequência alta (saturação)
+  const saturados = dadosAnaliseAdsets.filter(a => parseFloat(a.frequency||0) >= 3);
+  if (saturados.length > 0) {
+    insights.push({ type:'warn', icon:'🔁', text:`<strong>${saturados.length} conjunto(s)</strong> com frequência acima de 3x — o mesmo público está vendo o mesmo anúncio muitas vezes. Hora de renovar os criativos ou expandir o público.` });
+  }
+  // CTR baixo nos criativos
+  const ctrBaixo = dadosAnaliseAds.filter(a => parseFloat(a.ctr||0) < 1 && parseFloat(a.spend||0) > 50);
+  if (ctrBaixo.length > 0) {
+    insights.push({ type:'warn', icon:'👁️', text:`<strong>${ctrBaixo.length} criativo(s)</strong> com CTR abaixo de 1% — o anúncio não está chamando atenção suficiente. Teste novas imagens, vídeos ou primeiras linhas de texto.` });
   }
 
   const colBg    = { success:'#1a2a1e', info:'#1e2a4a', warn:'#2a1e10' };
@@ -1751,7 +1849,7 @@ function renderAnaliseCampanhas() {
   const empty = document.getElementById('analise-campanhas-empty');
   const tbody = document.getElementById('tbody-analise-camp');
 
-  const comConv = (dadosCamp || []).filter(c => extrairAction(c.actions, CONV_ACTION) > 0);
+  const comConv = (dadosAnalisecamp || []).filter(c => extrairAction(c.actions, CONV_ACTION) > 0);
   if (!comConv.length) { box.style.display='none'; empty.style.display='block'; return; }
   box.style.display='block'; empty.style.display='none';
 
@@ -1783,12 +1881,55 @@ function renderAnaliseCampanhas() {
   }).join('');
 }
 
+function renderAnaliseAdsets() {
+  const box   = document.getElementById('analise-adsets-box');
+  const empty = document.getElementById('analise-adsets-empty');
+  const tbody = document.getElementById('tbody-analise-adsets');
+
+  const comConv = (dadosAnaliseAdsets || []).filter(a => extrairAction(a.actions, CONV_ACTION) > 0);
+  if (!comConv.length) { box.style.display='none'; empty.style.display='block'; return; }
+  box.style.display='block'; empty.style.display='none';
+
+  const sorted = comConv.map(a => ({
+    nome:      a.adset_name || '—',
+    campanha:  a.campaign_name || '—',
+    loja:      lojaDecamp(a.campaign_name),
+    gasto:     parseFloat(a.spend||0),
+    conv:      extrairAction(a.actions, CONV_ACTION),
+    cpc:       parseFloat(a.spend||0) / extrairAction(a.actions, CONV_ACTION),
+    freq:      parseFloat(a.frequency||0),
+    ctr:       parseFloat(a.ctr||0),
+  })).sort((a,b) => a.cpc - b.cpc);
+
+  tbody.innerHTML = sorted.map((a, i) => {
+    const lojaBg  = a.loja==='sta' ? '#1e3a5f' : a.loja==='castelo' ? '#3a1a1a' : '#1e2235';
+    const lojaCol = a.loja==='sta' ? '#60a5fa' : a.loja==='castelo' ? '#f87171' : '#94a3b8';
+    const lojaLabel = a.loja==='sta' ? 'STA' : a.loja==='castelo' ? 'Castelo' : 'Geral';
+    const cpcColor = i===0 ? '#69db7c' : i===sorted.length-1 ? '#ff8787' : '#e2e8f0';
+    const freqColor = a.freq >= 3 ? '#ff8787' : a.freq >= 2 ? '#fbbf24' : '#69db7c';
+    const freqLabel = a.freq >= 3 ? 'Saturado' : a.freq >= 2 ? 'Atenção' : 'Ok';
+    const status = i===0 ? '<span class="badge bg">Escalar</span>' : a.freq >= 3 ? '<span class="badge br">Saturado</span>' : i===sorted.length-1 ? '<span class="badge br">Revisar</span>' : '<span class="badge by">Manter</span>';
+    const medal = i===0 ? '🥇 ' : i===1 ? '🥈 ' : i===2 ? '🥉 ' : `#${i+1} `;
+    return `<tr>
+      <td><strong style="color:#748ffc;">${medal}</strong></td>
+      <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${a.nome}">${a.nome}</td>
+      <td><span class="badge" style="background:${lojaBg};color:${lojaCol};">${lojaLabel}</span></td>
+      <td class="td-r" style="color:#94a3b8;">R$${fmt(a.gasto)}</td>
+      <td class="td-r">${fmtN(a.conv)}</td>
+      <td class="td-r" style="color:${cpcColor};font-weight:700;">R$${fmt(a.cpc)}</td>
+      <td class="td-r" style="color:${freqColor};font-weight:600;">${a.freq.toFixed(1)}x <span style="font-size:10px;">${freqLabel}</span></td>
+      <td class="td-r" style="color:#94a3b8;">${a.ctr.toFixed(2)}%</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
 function renderAnaliseCriativos() {
   const box   = document.getElementById('analise-criativos-box');
   const empty = document.getElementById('analise-criativos-empty');
   const tbody = document.getElementById('tbody-analise-criativos');
 
-  const comConv = (dadosAds || []).filter(a => extrairAction(a.actions, CONV_ACTION) > 0);
+  const comConv = (dadosAnaliseAds || []).filter(a => extrairAction(a.actions, CONV_ACTION) > 0);
   if (!comConv.length) { box.style.display='none'; empty.style.display='block'; return; }
   box.style.display='block'; empty.style.display='none';
 
@@ -1799,10 +1940,12 @@ function renderAnaliseCriativos() {
     conv:     extrairAction(a.actions, CONV_ACTION),
     cpc:      parseFloat(a.spend||0) / extrairAction(a.actions, CONV_ACTION),
     ctr:      parseFloat(a.ctr||0),
+    freq:     parseFloat(a.frequency||0),
   })).sort((a,b) => a.cpc - b.cpc);
 
   tbody.innerHTML = sorted.map((a, i) => {
     const cpcColor  = i===0 ? '#69db7c' : i===sorted.length-1 ? '#ff8787' : '#e2e8f0';
+    const freqColor = a.freq >= 3 ? '#ff8787' : a.freq >= 2 ? '#fbbf24' : '#69db7c';
     const resultado = i===0 ? '<span class="badge bg">⭐ Top Criativo</span>' : i===sorted.length-1 ? '<span class="badge br">Pausar?</span>' : '';
     const medal = i===0 ? '🥇 ' : i===1 ? '🥈 ' : i===2 ? '🥉 ' : `#${i+1} `;
     return `<tr>
@@ -1813,6 +1956,7 @@ function renderAnaliseCriativos() {
       <td class="td-r">${fmtN(a.conv)}</td>
       <td class="td-r" style="color:${cpcColor};font-weight:700;">R$${fmt(a.cpc)}</td>
       <td class="td-r" style="color:#94a3b8;">${a.ctr.toFixed(2)}%</td>
+      <td class="td-r" style="color:${freqColor};font-weight:600;">${a.freq.toFixed(1)}x</td>
       <td>${resultado}</td>
     </tr>`;
   }).join('');
@@ -1852,6 +1996,8 @@ window.onload = () => {
   const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
   document.getElementById('date-start').value = fmtDate(ini);
   document.getElementById('date-end').value = fmtDate(fim);
+  // Inicializa período da análise
+  setAnalisePreset('6m');
 };
 </script>
 </body>

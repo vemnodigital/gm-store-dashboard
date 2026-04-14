@@ -43,9 +43,10 @@ Dashboard de performance de marketing digital para a GM Store, substituindo os r
 - `instagram_manage_insights`
 
 ## Próximos passos planejados
+- [x] Análise automática de métricas — implementada na aba "Análise Estratégica" (v2.0)
 - [ ] Integração com Kommo CRM para puxar dados de vendas e calcular ROI real
 - [ ] Dados de Instagram orgânico (seguidores, alcance, reels)
-- [ ] Comparativo automático entre meses
+- [ ] Comparativo automático entre meses (histórico vs período atual)
 - [ ] Campo de vendas fechadas para cálculo de custo por venda
 
 ## Dados de Março 2026 (pré-carregados)
@@ -78,3 +79,32 @@ Dashboard de performance de marketing digital para a GM Store, substituindo os r
 - Tentativa de publicar no GitHub Pages — erro 404 pendente de resolução
 - Repositório configurado do zero com git init + push para vemnodigital/gm-store-dashboard
 - GitHub Pages ativado (repo público, branch main) — dashboard online
+
+### 14/04/2026 — Versão 2.0
+- Dados reais importados de planilha Excel (GM Store 6 Meses.xlsx) — Out/2025 a Abr/2026
+- Adicionada navegação por abas: **Performance Live** e **Análise Estratégica**
+- Nova aba "Análise Estratégica" com:
+  - Insights automáticos: melhor mês, melhor ROAS, alertas de queda de leads, campanha mais/menos eficiente
+  - Ranking de meses com medalhas, ordenado por faturamento + colunas Investimento, ROAS, Custo/Venda, Custo/Lead
+  - 6 gráficos históricos: faturamento, leads, vendas, ticket médio, investimento Meta, ROAS por mês
+  - Ranking de campanhas e criativos via API
+- Investimento histórico mensal buscado automaticamente da API Meta Ads ao abrir a aba
+- Pré-carregamento automático de vendas de todos os 7 meses (do Excel) no localStorage
+- Correção do ROAS: usa faturamento total (STA + Castelo + Online) ÷ investimento
+- GitHub CLI instalado e autenticado (conta: vemnodigital)
+- Commits publicados: `c3cacbf`, `eeceda6`, `f7977a5`, `2aeb020`
+
+### 14/04/2026 — Versão 2.1 (PENDENTE — limite de sessão atingido)
+**Próxima implementação a fazer ao retomar:**
+- [ ] Seletor de período próprio na aba Análise (presets: 30d, 90d, 6m, 1a) com botão Buscar independente
+- [ ] Variáveis separadas: `dadosAnalisecamp`, `dadosAnaliseAdsets`, `dadosAnaliseAds`
+- [ ] Seção **Conjuntos de Anúncios** (adsets) com: Nome, Loja, Investido, Conversas, Custo/Conv, **Frequência**, CTR, Status
+  - Frequência ≥ 3 = "Saturado" (vermelho) → trocar criativo
+  - Frequência 2–3 = "Atenção" (amarelo)
+  - Frequência < 2 = "Ok" (verde)
+- [ ] Adicionar coluna **Frequência** na tabela de criativos
+- [ ] Insights automáticos de frequência: alerta se conjuntos saturados
+- [ ] Insights de CTR baixo: criativos com CTR < 1% e gasto > R$50
+- [ ] Campos da API para adsets: `adset_name, campaign_name, spend, reach, impressions, inline_link_clicks, cpm, ctr, frequency, actions, cost_per_action_type`
+- [ ] `renderAnaliseCampanhas` e `renderAnaliseCriativos` devem usar as novas variáveis (não mais `dadosCamp`/`dadosAds` da Performance)
+- [ ] Inicializar período da análise com 6 meses no `window.onload`
