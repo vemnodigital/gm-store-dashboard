@@ -516,10 +516,10 @@ tbody td{padding:10px 16px;font-size:12px;}
         <div class="card c-green"><div class="lbl">Conversas WhatsApp</div><div class="val" id="c-conv">—</div><div class="sub" id="c-conv-sub">Todas as lojas</div></div>
         <div class="card"><div class="lbl">CPM Médio</div><div class="val" id="c-cpm">—</div><div class="sub">Por mil impressões</div></div>
         <div class="card c-green"><div class="lbl">Custo / Conversa</div><div class="val" id="c-cpc">—</div><div class="sub">Média geral</div></div>
-        <div class="card" id="card-fat-online"><div class="lbl">Faturamento Online</div><div class="val" id="c-fat-online">—</div><div class="sub" id="c-fat-online-sub">Via campanhas Meta</div></div>
-        <div class="card" id="card-fat-total"><div class="lbl">Fat. Total das Lojas</div><div class="val" id="c-fat-total">—</div><div class="sub" id="c-fat-total-sub">STA + Castelo</div></div>
-        <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub">Investido ÷ vendas online</div></div>
-        <div class="card" id="card-roas"><div class="lbl">ROAS</div><div class="val" id="c-roas">—</div><div class="sub" id="c-roas-sub">Fat. online ÷ investimento</div></div>
+        <div class="card" id="card-fat-online"><div class="lbl">Faturamento Total</div><div class="val" id="c-fat-online">—</div><div class="sub" id="c-fat-online-sub">STA + Castelo + Entrega</div></div>
+        <div class="card" id="card-vendas-loja"><div class="lbl">Vendas Fechadas</div><div class="val" id="c-vendas-total">—</div><div class="sub" id="c-vendas-sub">STA · Castelo · Entrega</div></div>
+        <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub" id="c-cpv-sub">Investido ÷ total vendas</div></div>
+        <div class="card" id="card-roas"><div class="lbl">ROAS</div><div class="val" id="c-roas">—</div><div class="sub" id="c-roas-sub">Fat. total ÷ investimento</div></div>
       </div>
 
       <!-- FUNIL -->
@@ -1335,29 +1335,35 @@ function atualizarCardsVendas() {
   const chave = chaveVendas();
   if (!chave) return;
   const v = carregarVendas(chave);
-  const fatTotal = v.sta.fatTotal + v.castelo.fatTotal;
   const totals = somarTotais(filtrarPorLoja(dadosCamp));
-  const cpv = v.vendasOnline > 0 ? totals.spend / v.vendasOnline : 0;
-  const temDados = v.fatOnline > 0 || fatTotal > 0;
 
-  // Card faturamento online
+  const totalVendas = (v.sta.vendas || 0) + (v.castelo.vendas || 0) + (v.vendasOnline || 0);
+  const cpv = totalVendas > 0 ? totals.spend / totalVendas : 0;
+  const temDados = v.fatOnline > 0;
+
+  // Card faturamento total
   const cfo = document.getElementById('card-fat-online');
   cfo.className = v.fatOnline > 0 ? 'card c-green' : 'card';
   document.getElementById('c-fat-online').textContent = v.fatOnline > 0 ? 'R$' + fmt(v.fatOnline) : '—';
-  document.getElementById('c-fat-online-sub').textContent = v.vendasOnline > 0 ? `${v.vendasOnline} vendas — STA + Castelo + Online` : 'STA + Castelo + Online';
-
-  // Card faturamento total das lojas
-  const cft = document.getElementById('card-fat-total');
-  cft.className = fatTotal > 0 ? 'card c-green' : 'card';
-  document.getElementById('c-fat-total').textContent = fatTotal > 0 ? 'R$' + fmtK(fatTotal) : '—';
-  document.getElementById('c-fat-total-sub').textContent = fatTotal > 0
+  document.getElementById('c-fat-online-sub').textContent = v.fatOnline > 0
     ? `STA: R$${fmtK(v.sta.fatTotal)} · Castelo: R$${fmtK(v.castelo.fatTotal)}`
-    : 'STA + Castelo';
+    : 'STA + Castelo + Entrega';
+
+  // Card vendas por loja
+  const cvl = document.getElementById('card-vendas-loja');
+  cvl.className = totalVendas > 0 ? 'card c-green' : 'card';
+  document.getElementById('c-vendas-total').textContent = totalVendas > 0 ? totalVendas + ' vendas' : '—';
+  document.getElementById('c-vendas-sub').textContent = totalVendas > 0
+    ? `STA: ${v.sta.vendas} · Castelo: ${v.castelo.vendas} · Entrega: ${v.vendasOnline}`
+    : 'STA · Castelo · Entrega';
 
   // Card custo por venda
   const ccpv = document.getElementById('card-cpv');
   ccpv.className = cpv > 0 ? 'card c-blue' : 'card';
   document.getElementById('c-cpv').textContent = cpv > 0 ? 'R$' + fmt(cpv) : '—';
+  document.getElementById('c-cpv-sub').textContent = cpv > 0
+    ? `R$${fmt(totals.spend)} ÷ ${totalVendas} vendas`
+    : 'Investido ÷ total vendas';
 
   // Card ROAS
   const roas = (v.fatOnline > 0 && totals.spend > 0) ? v.fatOnline / totals.spend : 0;
@@ -1372,7 +1378,7 @@ function atualizarCardsVendas() {
   } else {
     cardRoas.className = 'card';
     document.getElementById('c-roas').textContent = '—';
-    document.getElementById('c-roas-sub').textContent = 'Registre faturamento online';
+    document.getElementById('c-roas-sub').textContent = 'Registre o faturamento via + Vendas';
   }
 
   // Botão header
