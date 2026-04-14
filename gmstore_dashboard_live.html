@@ -1003,58 +1003,77 @@ function renderFunil(t) {
   const conv = t.conv || 0;
   const ctrPct = t.impressions > 0 ? (t.clicks/t.impressions*100).toFixed(2) : '—';
   const convPct = t.clicks > 0 ? (conv/t.clicks*100).toFixed(1) : '—';
-  const cpcConv = conv > 0 ? 'R$'+fmt(t.spend/conv) : '—';
 
   const vd = carregarVendas(chaveVendas());
-  const totalVendas = vd.vendasOnline || 0;
-  const totalFat = vd.fatOnline || 0;
-  const fatTotal = (vd.sta.fatTotal || 0) + (vd.castelo.fatTotal || 0);
+  const totalVendas = (vd.sta.vendas || 0) + (vd.castelo.vendas || 0) + (vd.vendasOnline || 0);
+
+  // Agendamentos da planilha
+  const chave = chaveVendas();
+  const hist = carregarHistorico();
+  const agend = chave && hist[chave] ? hist[chave].agendamentos || 0 : 0;
+
   const cpvReal = totalVendas > 0 ? t.spend / totalVendas : 0;
-  const txConvVenda = conv > 0 && totalVendas > 0 ? (totalVendas/conv*100).toFixed(1) : null;
-  const vendaLabel = totalVendas > 0 ? fmtN(totalVendas) : '?';
+  const txConvAgend = conv > 0 && agend > 0 ? (agend/conv*100).toFixed(1) : null;
+  const txAgendVenda = agend > 0 && totalVendas > 0 ? (totalVendas/agend*100).toFixed(1) : null;
   const vendaBg = totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#7f1d1d,#991b1b)';
-  const vendaDrop = totalVendas > 0
-    ? `<div class="funnel-drop fd-ok">↓ ${txConvVenda}% das conversas viraram venda</div>`
+  const vendasDetalhe = totalVendas > 0
+    ? `STA: ${vd.sta.vendas} · Castelo: ${vd.castelo.vendas} · Entrega: ${vd.vendasOnline}`
+    : 'STA · Castelo · Entrega';
+
+  const agendDrop = agend > 0
+    ? `<div class="funnel-drop fd-ok">↓ ${txConvAgend || '?'}% das conversas agendaram</div>`
+    : `<div class="funnel-drop fd-warn">↓ Agendamentos: dados do mês</div>`;
+  const vendaDrop = totalVendas > 0 && agend > 0
+    ? `<div class="funnel-drop fd-ok">↓ ${txAgendVenda}% dos agendamentos fecharam</div>`
+    : totalVendas > 0
+    ? `<div class="funnel-drop fd-ok">↓ ${totalVendas} vendas no período</div>`
     : `<div class="funnel-drop fd-bad">↓ Registre as vendas clicando em "+ Vendas"</div>`;
 
   document.getElementById('funil-visual').innerHTML = `
-    <div style="width:100%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1d4ed8,#2563eb);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+    <div style="width:100%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1d4ed8,#2563eb);">
       <span style="font-size:11px;opacity:0.8;">Alcance</span><span style="font-weight:800;font-size:14px;">${fmtN(t.reach)}</span></div></div>
     <div class="funnel-connector"></div>
-    <div style="width:88%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1e40af,#3b82f6);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+    <div style="width:88%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1e40af,#3b82f6);">
       <span style="font-size:11px;opacity:0.8;">Impressões</span><span style="font-weight:800;font-size:14px;">${fmtN(t.impressions)}</span></div></div>
     <div class="funnel-connector"></div>
     <div class="funnel-drop fd-warn">↓ CTR: ${ctrPct}%</div>
     <div class="funnel-connector"></div>
-    <div style="width:65%"><div class="funnel-bar" style="background:linear-gradient(90deg,#5b21b6,#7c3aed);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+    <div style="width:65%"><div class="funnel-bar" style="background:linear-gradient(90deg,#5b21b6,#7c3aed);">
       <span style="font-size:11px;opacity:0.8;">Cliques no Link</span><span style="font-weight:800;font-size:14px;">${fmtN(t.clicks)}</span></div></div>
     <div class="funnel-connector"></div>
     <div class="funnel-drop fd-ok">↓ ${convPct}% converteram em conversa</div>
     <div class="funnel-connector"></div>
-    <div style="width:40%"><div class="funnel-bar" style="background:linear-gradient(90deg,#065f46,#059669);clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
+    <div style="width:48%"><div class="funnel-bar" style="background:linear-gradient(90deg,#065f46,#059669);">
       <span style="font-size:11px;opacity:0.8;">Conversas WA</span><span style="font-weight:800;font-size:14px;">${fmtN(conv)}</span></div></div>
+    <div class="funnel-connector"></div>
+    ${agendDrop}
+    <div class="funnel-connector"></div>
+    <div style="width:32%"><div class="funnel-bar" style="background:linear-gradient(90deg,#0369a1,#0ea5e9);">
+      <span style="font-size:11px;opacity:0.8;">Agendamentos</span><span style="font-weight:800;font-size:14px;">${agend > 0 ? agend : '—'}</span></div></div>
     <div class="funnel-connector"></div>
     ${vendaDrop}
     <div class="funnel-connector"></div>
-    <div style="width:22%"><div class="funnel-bar" style="background:${vendaBg};clip-path:polygon(0% 0%,100% 0%,97% 100%,3% 100%);">
-      <span style="font-size:11px;opacity:0.8;">Vendas</span><span style="font-weight:800;font-size:14px;">${vendaLabel}</span></div></div>`;
+    <div style="width:20%"><div class="funnel-bar" style="background:${vendaBg};">
+      <span style="font-size:11px;opacity:0.8;">${vendasDetalhe}</span><span style="font-weight:800;font-size:14px;">${totalVendas > 0 ? totalVendas+' vendas' : '?'}</span></div></div>`;
 
   const cpvTexto = cpvReal > 0
     ? `<span style="color:#69db7c;">R$${fmt(cpvReal)}</span>`
     : `<span style="color:#ff8787;">Registre as vendas</span>`;
-  const roas = totalFat > 0 && t.spend > 0 ? totalFat / t.spend : 0;
+  const roas = vd.fatOnline > 0 && t.spend > 0 ? vd.fatOnline / t.spend : 0;
   const roasColor = roas >= 3 ? '#69db7c' : roas >= 1.5 ? '#748ffc' : '#ff8787';
   const roasTexto = roas > 0
     ? `<span style="color:${roasColor};">${roas.toFixed(2)}x</span>`
     : '—';
+  const cpcConv = conv > 0 ? 'R$'+fmt(t.spend/conv) : '—';
 
   document.getElementById('funil-stats').innerHTML = `
     <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Custo em cada etapa</div>
     <div class="fstat" style="border-color:#3b82f6;"><div class="fs-l">Custo por 1.000 pessoas</div><div class="fs-v" style="color:#748ffc;">R$${fmt(t.spend/t.reach*1000||0)}</div></div>
     <div class="fstat" style="border-color:#7c3aed;"><div class="fs-l">Custo por clique</div><div class="fs-v" style="color:#a78bfa;">${t.clicks>0?'R$'+fmt(t.spend/t.clicks):'—'}</div></div>
     <div class="fstat" style="border-color:#059669;"><div class="fs-l">Custo por conversa</div><div class="fs-v" style="color:#69db7c;">${cpcConv}</div></div>
-    <div class="fstat" style="border-color:${cpvReal>0?'#059669':'#991b1b'};"><div class="fs-l">Custo por venda</div><div class="fs-v">${cpvTexto}</div></div>
-    <div class="fstat" style="border-color:${roas>=3?'#2f9e44':roas>=1.5?'#3b5bdb':'#991b1b'};"><div class="fs-l">ROAS (fat. online ÷ invest.)</div><div class="fs-v">${roasTexto}</div></div>
+    <div class="fstat" style="border-color:#0ea5e9;"><div class="fs-l">Agendamentos (mês)</div><div class="fs-v" style="color:#38bdf8;">${agend > 0 ? agend : '—'}</div></div>
+    <div class="fstat" style="border-color:${cpvReal>0?'#059669':'#991b1b'};"><div class="fs-l">Custo por venda (${totalVendas} vendas)</div><div class="fs-v">${cpvTexto}</div></div>
+    <div class="fstat" style="border-color:${roas>=3?'#2f9e44':roas>=1.5?'#3b5bdb':'#991b1b'};"><div class="fs-l">ROAS (fat. total ÷ invest.)</div><div class="fs-v">${roasTexto}</div></div>
     ${totalFat > 0 ? `
     <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
       <strong style="color:#748ffc;">Online:</strong> R$${fmt(vd.fatOnline)}<br>
