@@ -1826,17 +1826,21 @@ document.addEventListener('click', e => {
 
 // INIT
 window.onload = () => {
-  // Pré-carrega dados de março 2026 se ainda não existirem
+  // Pré-carrega vendas de todos os meses históricos usando dados da planilha
   const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
-  if (!vendas['2026-03']) {
-    vendas['2026-03'] = {
-      fatOnline:    10403,
-      vendasOnline: 0,
-      sta:     { fatTotal: 76000, vendas: 0 },
-      castelo: { fatTotal: 37000, vendas: 0 }
-    };
-    localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
-  }
+  let atualizado = false;
+  Object.entries(HISTORICO_INICIAL).forEach(([mes, h]) => {
+    if (!vendas[mes]) {
+      vendas[mes] = {
+        fatOnline:    h.fatOnline    || 0,
+        vendasOnline: h.leadsOnline  || 0,
+        sta:     { fatTotal: h.fatSTA     || 0, vendas: h.leadsSTA     || 0 },
+        castelo: { fatTotal: h.fatCastelo || 0, vendas: h.leadsCastelo || 0 },
+      };
+      atualizado = true;
+    }
+  });
+  if (atualizado) localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
   // Pré-carrega histórico sem sobrescrever dados já editados pelo usuário
   const histSalvo = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
   const histMerge = Object.assign({}, HISTORICO_INICIAL, histSalvo);
