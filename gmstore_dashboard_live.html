@@ -632,10 +632,6 @@ tbody td{padding:10px 16px;font-size:12px;}
       <span id="analise-fetch-status" style="font-size:12px;color:#748ffc;"></span>
     </div>
 
-    <!-- INSIGHTS AUTOMÁTICOS -->
-    <div class="section-title" style="margin-top:4px;">Insights Estratégicos — O que os dados dizem</div>
-    <div id="analise-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
-
     <!-- RANKING DE MESES -->
     <div class="section-title" style="margin-top:20px;">Ranking de Meses — Histórico 7 meses</div>
     <div id="analise-ranking-meses"></div>
@@ -723,6 +719,10 @@ tbody td{padding:10px 16px;font-size:12px;}
         </table>
       </div>
     </div>
+
+    <!-- INSIGHTS ESTRATÉGICOS — ao final para leitura após análise dos dados -->
+    <div class="section-title" style="margin-top:32px;">Insights Estratégicos — Análise Sênior dos Dados</div>
+    <div id="analise-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
 
     <div style="height:32px;"></div>
   </div><!-- /panel-analise -->
@@ -1650,79 +1650,116 @@ function renderInsightsAnalise() {
   const hist = carregarHistorico();
   const meses = Object.keys(MESES_PT);
   const insights = [];
+  const colBg  = { success:'#1a2a1e', info:'#1e2a4a', warn:'#2a1e10', alert:'#2a1a2a' };
+  const colBd  = { success:'#2f9e44', info:'#3b5bdb', warn:'#f59e0b', alert:'#9333ea' };
 
-  let melhorFatMes = null, melhorFatVal = 0;
-  let piorFatMes = null, piorFatVal = Infinity;
-  let melhorConvMes = null, melhorConvVal = 0;
-  meses.forEach(m => {
-    const h = hist[m];
-    if (!h || h.faturamento <= 0) return;
-    if (h.faturamento > melhorFatVal) { melhorFatVal = h.faturamento; melhorFatMes = m; }
-    if (h.faturamento < piorFatVal)   { piorFatVal  = h.faturamento; piorFatMes  = m; }
-    const conv = h.leads > 0 ? h.vendas / h.leads : 0;
-    if (conv > melhorConvVal) { melhorConvVal = conv; melhorConvMes = m; }
-  });
+  // ── 1. FUNIL HISTÓRICO — onde estão as maiores perdas ──
+  const mesesComDados = meses.filter(m => hist[m] && hist[m].leads > 0);
+  if (mesesComDados.length > 0) {
+    // Taxa lead→agendamento por mês
+    const taxasAgend = mesesComDados.map(m => ({
+      mes: m, taxa: hist[m].leads > 0 ? hist[m].agendamentos / hist[m].leads : 0
+    })).sort((a,b) => b.taxa - a.taxa);
+    const melhorAgend = taxasAgend[0];
+    const piorAgend = taxasAgend[taxasAgend.length - 1];
+    insights.push({ type:'info', icon:'📊', text:`<strong>Funil — Lead → Agendamento:</strong> melhor taxa em <strong>${MESES_PT[melhorAgend.mes]}</strong> (${(melhorAgend.taxa*100).toFixed(1)}%), pior em <strong>${MESES_PT[piorAgend.mes]}</strong> (${(piorAgend.taxa*100).toFixed(1)}%). Diferença de <strong>${((melhorAgend.taxa - piorAgend.taxa)*100).toFixed(1)} pontos percentuais</strong> — investigar o que mudou na qualidade dos leads nesses meses.` });
 
-  if (melhorFatMes) insights.push({ type:'success', icon:'🏆', text:`<strong>${MESES_PT[melhorFatMes]}</strong> foi o melhor mês em faturamento — <strong>R$${fmtK(melhorFatVal)}</strong>. Analise o que foi investido e quais campanhas rodaram nesse período para replicar em 2026.` });
-  if (melhorConvMes) insights.push({ type:'info', icon:'💡', text:`Melhor taxa de conversão em <strong>${MESES_PT[melhorConvMes]}</strong> — <strong>${(melhorConvVal*100).toFixed(1)}%</strong> dos leads se tornaram vendas. Vale entender o perfil do público e das campanhas desse mês.` });
-  if (piorFatMes && piorFatMes !== melhorFatMes) insights.push({ type:'warn', icon:'⚠️', text:`<strong>${MESES_PT[piorFatMes]}</strong> foi o mês mais fraco — <strong>R$${fmtK(piorFatVal)}</strong>. Verifique se foi sazonalidade, redução de investimento ou queda de leads.` });
-
-  // Queda de leads Out/25 → Jan/26
-  const hOut = hist['2025-10'], hJan = hist['2026-01'];
-  if (hOut && hJan && hOut.leads > 0) {
-    const diff = ((hJan.leads - hOut.leads) / hOut.leads * 100).toFixed(0);
-    if (parseInt(diff) < -50) insights.push({ type:'warn', icon:'📉', text:`Queda forte de leads: <strong>${hOut.leads}</strong> (Out/25) → <strong>${hJan.leads}</strong> (Jan/26) — <strong>${diff}%</strong>. Reveja volume de investimento e segmentação de público.` });
-  }
-
-  // ROAS histórico — melhor e pior mês
-  const comInvest = meses.filter(m => investimentoHistorico[m] > 0 && hist[m]?.faturamento > 0);
-  if (comInvest.length > 0) {
-    const roasPorMes = comInvest.map(m => ({ mes: m, roas: hist[m].faturamento / investimentoHistorico[m] }));
-    roasPorMes.sort((a,b) => b.roas - a.roas);
-    const melhorRoas = roasPorMes[0];
-    insights.push({ type:'success', icon:'📈', text:`Melhor ROAS histórico em <strong>${MESES_PT[melhorRoas.mes]}</strong> — <strong>${melhorRoas.roas.toFixed(2)}x</strong>. Analise o que foi feito nesse mês para replicar.` });
-    if (roasPorMes.length > 1) {
-      const piorRoas = roasPorMes[roasPorMes.length - 1];
-      insights.push({ type:'warn', icon:'📉', text:`Pior ROAS em <strong>${MESES_PT[piorRoas.mes]}</strong> — <strong>${piorRoas.roas.toFixed(2)}x</strong>. Verifique se o investimento estava mal segmentado ou o volume de leads foi insuficiente.` });
+    // Taxa agendamento→venda por mês
+    const mesesComAgend = meses.filter(m => hist[m] && hist[m].agendamentos > 0);
+    if (mesesComAgend.length > 0) {
+      const taxasVenda = mesesComAgend.map(m => ({
+        mes: m, taxa: hist[m].agendamentos > 0 ? Math.min(hist[m].vendas / hist[m].agendamentos, 1) : 0
+      })).sort((a,b) => b.taxa - a.taxa);
+      const melhorVenda = taxasVenda[0];
+      const mediaFechamento = taxasVenda.reduce((s,t) => s+t.taxa, 0) / taxasVenda.length;
+      insights.push({ type:'success', icon:'🤝', text:`<strong>Funil — Agendamento → Venda:</strong> taxa média de fechamento de <strong>${(mediaFechamento*100).toFixed(0)}%</strong>. Melhor mês: <strong>${MESES_PT[melhorVenda.mes]}</strong> com ${(melhorVenda.taxa*100).toFixed(0)}%. Alta taxa indica bom processo comercial — o gargalo está na geração de leads qualificados.` });
     }
   }
 
+  // ── 2. COMPARATIVO STA vs CASTELO ──
+  const totalFatSTA = meses.reduce((s,m) => s + (hist[m]?.fatSTA||0), 0);
+  const totalFatCas = meses.reduce((s,m) => s + (hist[m]?.fatCastelo||0), 0);
+  const totalVenSTA = meses.reduce((s,m) => s + (hist[m]?.leadsSTA||0), 0);
+  const totalVenCas = meses.reduce((s,m) => s + (hist[m]?.leadsCastelo||0), 0);
+  if (totalFatSTA > 0 && totalFatCas > 0) {
+    const ticketSTA = totalVenSTA > 0 ? totalFatSTA / totalVenSTA : 0;
+    const ticketCas = totalVenCas > 0 ? totalFatCas / totalVenCas : 0;
+    const lidLoja = totalFatSTA > totalFatCas ? 'STA' : 'Castelo';
+    const pct = Math.abs((totalFatSTA - totalFatCas) / Math.max(totalFatSTA, totalFatCas) * 100).toFixed(0);
+    insights.push({ type:'info', icon:'🏪', text:`<strong>STA vs Castelo (acumulado 7 meses):</strong> STA gerou <strong>R$${fmtK(totalFatSTA)}</strong> (${totalVenSTA} vendas · ticket R$${fmt(ticketSTA)}) · Castelo <strong>R$${fmtK(totalFatCas)}</strong> (${totalVenCas} vendas · ticket R$${fmt(ticketCas)}). <strong>${lidLoja}</strong> lidera com ${pct}% a mais. ${ticketSTA > ticketCas ? 'STA tem ticket maior — priorize escalar campanhas STA.' : 'Castelo tem ticket maior — oportunidade de aumentar investimento na Castelo.'}` });
+  }
+
+  // ── 3. SAZONALIDADE — padrão por trimestre ──
+  const q4_2025 = ['2025-10','2025-11','2025-12'].reduce((s,m) => s + (hist[m]?.faturamento||0), 0);
+  const q1_2026 = ['2026-01','2026-02','2026-03'].reduce((s,m) => s + (hist[m]?.faturamento||0), 0);
+  if (q4_2025 > 0 && q1_2026 > 0) {
+    const queda = ((q1_2026 - q4_2025) / q4_2025 * 100).toFixed(0);
+    insights.push({ type: parseInt(queda) < -20 ? 'warn' : 'info', icon:'📅', text:`<strong>Sazonalidade:</strong> Out–Dez/25 somou <strong>R$${fmtK(q4_2025)}</strong> · Jan–Mar/26 somou <strong>R$${fmtK(q1_2026)}</strong> (${queda}%). ${parseInt(queda) < -20 ? 'Queda significativa no Q1/2026 — típico para joalheria/moda. Planejar campanhas de reativação e sazonalidade (Dia das Mães, Namorados) para recuperar ritmo.' : 'Desempenho estável entre trimestres.'}` });
+  }
+
+  // ── 4. ALERTA QUEDA DE LEADS ──
+  const leadsNov = hist['2025-11']?.leads || 0;
+  const leadsJan = hist['2026-01']?.leads || 0;
+  if (leadsNov > 0 && leadsJan > 0) {
+    const quedaLeads = ((leadsJan - leadsNov) / leadsNov * 100).toFixed(0);
+    if (parseInt(quedaLeads) < -70) {
+      insights.push({ type:'warn', icon:'🚨', text:`<strong>Colapso de leads:</strong> de <strong>${leadsNov}</strong> leads em Nov/25 para <strong>${leadsJan}</strong> em Jan/26 (<strong>${quedaLeads}%</strong>). Provável causa: redução drástica de investimento ou mudança de estratégia. Leads são o combustível do negócio — sem volume, vendas caem 60-90 dias depois.` });
+    }
+  }
+
+  // ── 5. ROAS histórico ──
+  const comInvest = meses.filter(m => investimentoHistorico[m] > 0 && hist[m]?.faturamento > 0);
+  if (comInvest.length >= 2) {
+    const roasList = comInvest.map(m => ({ mes:m, roas: hist[m].faturamento / investimentoHistorico[m] })).sort((a,b) => b.roas - a.roas);
+    const melhor = roasList[0], pior = roasList[roasList.length-1];
+    const mediaRoas = roasList.reduce((s,r) => s+r.roas, 0) / roasList.length;
+    insights.push({ type: mediaRoas >= 3 ? 'success' : mediaRoas >= 1.5 ? 'info' : 'warn', icon:'📈', text:`<strong>ROAS histórico:</strong> média de <strong>${mediaRoas.toFixed(2)}x</strong> nos ${comInvest.length} meses analisados. Melhor: <strong>${MESES_PT[melhor.mes]} (${melhor.roas.toFixed(2)}x)</strong> · Pior: <strong>${MESES_PT[pior.mes]} (${pior.roas.toFixed(2)}x)</strong>. ${mediaRoas >= 3 ? 'ROAS saudável — escale o investimento nos meses de pico.' : 'ROAS abaixo de 3x — reveja mix de campanhas e qualidade dos criativos.'}` });
+  }
+
+  // ── 6. INSIGHTS DA API (campanhas e criativos) ──
   if (dadosAnalisecamp && dadosAnalisecamp.length > 0) {
     const comConv = dadosAnalisecamp.filter(c => extrairAction(c.actions, CONV_ACTION) > 0)
-      .map(c => ({ nome: c.campaign_name, cpc: parseFloat(c.spend||0) / extrairAction(c.actions, CONV_ACTION) }))
+      .map(c => ({ nome: c.campaign_name, spend: parseFloat(c.spend||0), conv: extrairAction(c.actions, CONV_ACTION), cpc: parseFloat(c.spend||0)/extrairAction(c.actions, CONV_ACTION), ctr: parseFloat(c.ctr||0) }))
       .sort((a,b) => a.cpc - b.cpc);
     if (comConv.length > 0) {
-      const best = comConv[0];
-      insights.push({ type:'success', icon:'🚀', text:`Campanha mais eficiente no período atual: <strong>${best.nome}</strong> — Custo/Conversa de <strong>R$${fmt(best.cpc)}</strong>. Candidata a escalar o investimento.` });
+      const best = comConv[0], worst = comConv[comConv.length-1];
+      const disp = comConv.length > 1 ? ((worst.cpc - best.cpc)/best.cpc*100).toFixed(0) : 0;
+      insights.push({ type:'success', icon:'🚀', text:`<strong>Campanhas do período:</strong> melhor é <strong>"${best.nome}"</strong> com Custo/Conversa de <strong>R$${fmt(best.cpc)}</strong>${comConv.length > 1 ? ` — <strong>${disp}%</strong> mais barata que a menos eficiente. Concentre orçamento aqui.` : '.'}` });
+      if (comConv.length > 1) insights.push({ type:'warn', icon:'🔻', text:`Campanha <strong>"${worst.nome}"</strong> custa <strong>R$${fmt(worst.cpc)}</strong> por conversa — <strong>${disp}%</strong> mais cara que a melhor. Avalie pausa ou reformulação do criativo antes de continuar investindo.` });
     }
-    if (comConv.length > 1) {
-      const worst = comConv[comConv.length - 1];
-      insights.push({ type:'warn', icon:'🔻', text:`Campanha menos eficiente: <strong>${worst.nome}</strong> — Custo/Conversa de <strong>R$${fmt(worst.cpc)}</strong>. Considere pausar ou revisar o criativo.` });
+
+    // CPM alto vs baixo
+    const comCPM = dadosAnalisecamp.filter(c => parseFloat(c.cpm||0) > 0).sort((a,b) => parseFloat(a.cpm||0)-parseFloat(b.cpm||0));
+    if (comCPM.length >= 2) {
+      const cpmBaixo = parseFloat(comCPM[0].cpm), cpmAlto = parseFloat(comCPM[comCPM.length-1].cpm);
+      if (cpmAlto > cpmBaixo * 2) insights.push({ type:'alert', icon:'💰', text:`<strong>Variação de CPM:</strong> de <strong>R$${fmt(cpmBaixo)}</strong> a <strong>R$${fmt(cpmAlto)}</strong> entre campanhas. CPM alto indica público saturado ou competição elevada — considere expandir segmentação ou testar novos públicos nessas campanhas.` });
     }
   }
 
-  // Frequência alta (saturação)
-  const saturados = dadosAnaliseAdsets.filter(a => parseFloat(a.frequency||0) >= 3);
-  if (saturados.length > 0) {
-    insights.push({ type:'warn', icon:'🔁', text:`<strong>${saturados.length} conjunto(s)</strong> com frequência acima de 3x — o mesmo público está vendo o mesmo anúncio muitas vezes. Hora de renovar os criativos ou expandir o público.` });
-  }
-  // CTR baixo nos criativos
-  const ctrBaixo = dadosAnaliseAds.filter(a => parseFloat(a.ctr||0) < 1 && parseFloat(a.spend||0) > 50);
-  if (ctrBaixo.length > 0) {
-    insights.push({ type:'warn', icon:'👁️', text:`<strong>${ctrBaixo.length} criativo(s)</strong> com CTR abaixo de 1% — o anúncio não está chamando atenção suficiente. Teste novas imagens, vídeos ou primeiras linhas de texto.` });
-  }
+  // ── 7. FREQUÊNCIA (saturação) ──
+  if (dadosAnaliseAdsets && dadosAnaliseAdsets.length > 0) {
+    const saturados = dadosAnaliseAdsets.filter(a => parseFloat(a.frequency||0) >= 3);
+    const emAtencao = dadosAnaliseAdsets.filter(a => parseFloat(a.frequency||0) >= 2 && parseFloat(a.frequency||0) < 3);
+    if (saturados.length > 0) {
+      insights.push({ type:'warn', icon:'🔁', text:`<strong>${saturados.length} conjunto(s) saturados</strong> (frequência ≥ 3x): o mesmo público vê o mesmo anúncio repetidas vezes. Resultado esperado: aumento de CPM, queda de CTR e conversas. Ação imediata: troque criativos ou expanda público lookalike.` });
+    } else if (emAtencao.length > 0) {
+      insights.push({ type:'warn', icon:'⚠️', text:`<strong>${emAtencao.length} conjunto(s)</strong> com frequência entre 2–3x. Ainda não crítico, mas monitore — se CTR cair nos próximos dias, renove o criativo preventivamente.` });
+    }
 
-  const colBg    = { success:'#1a2a1e', info:'#1e2a4a', warn:'#2a1e10' };
-  const colBd    = { success:'#2f9e44', info:'#3b5bdb', warn:'#f59e0b' };
-  const colTxt   = { success:'#69db7c', info:'#748ffc', warn:'#fbbf24' };
+    // CTR baixo
+    const ctrBaixo = dadosAnaliseAds.filter(a => parseFloat(a.ctr||0) < 1 && parseFloat(a.spend||0) > 100);
+    if (ctrBaixo.length > 0) {
+      insights.push({ type:'warn', icon:'👁️', text:`<strong>${ctrBaixo.length} criativo(s)</strong> com CTR abaixo de 1% e mais de R$100 investido — o anúncio não está gerando cliques suficientes. Teste novas imagens, vídeos curtos (Reels) ou mude o texto da chamada principal.` });
+    }
+  }
 
   document.getElementById('analise-insights').innerHTML = insights.length
     ? insights.map(i => `
-        <div class="insight-card" style="background:${colBg[i.type]};border:1px solid ${colBd[i.type]};border-left:4px solid ${colBd[i.type]};">
-          <span style="font-size:18px;line-height:1;">${i.icon}</span>
-          <span style="color:#e2e8f0;">${i.text}</span>
+        <div class="insight-card" style="background:${colBg[i.type]||colBg.info};border:1px solid ${colBd[i.type]||colBd.info};border-left:4px solid ${colBd[i.type]||colBd.info};">
+          <span style="font-size:18px;line-height:1;flex-shrink:0;">${i.icon}</span>
+          <span style="color:#e2e8f0;line-height:1.7;">${i.text}</span>
         </div>`).join('')
-    : '<div style="color:#6b7280;font-size:13px;padding:8px 0;">Busque dados para gerar insights automáticos.</div>';
+    : '<div style="color:#6b7280;font-size:13px;padding:8px 0;">Carregando dados para análise...</div>';
 }
 
 function renderRankingMeses() {
@@ -2001,15 +2038,15 @@ document.addEventListener('click', e => {
 
 // INIT
 window.onload = () => {
-  // Pré-carrega e atualiza vendas de todos os meses históricos usando dados da planilha
+  // Força atualização completa de todos os meses com dados da planilha
+  // Não preserva dados antigos para evitar inconsistências
   const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
   Object.entries(HISTORICO_INICIAL).forEach(([mes, h]) => {
-    const ex = vendas[mes] || {};
     vendas[mes] = {
-      fatOnline:    h.faturamento   || 0,  // sempre usa faturamento total (STA + Castelo + Online)
-      vendasOnline: ex.vendasOnline || h.leadsOnline  || 0,
-      sta:     ex.sta     || { fatTotal: h.fatSTA     || 0, vendas: h.leadsSTA     || 0 },
-      castelo: ex.castelo || { fatTotal: h.fatCastelo || 0, vendas: h.leadsCastelo || 0 },
+      fatOnline:    h.faturamento   || 0,
+      vendasOnline: h.leadsOnline   || 0,
+      sta:     { fatTotal: h.fatSTA     || 0, vendas: h.leadsSTA     || 0 },
+      castelo: { fatTotal: h.fatCastelo || 0, vendas: h.leadsCastelo || 0 },
     };
   });
   localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
