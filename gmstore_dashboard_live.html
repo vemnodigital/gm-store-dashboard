@@ -609,8 +609,11 @@ tbody td{padding:10px 16px;font-size:12px;}
   <!-- PAINEL ANÁLISE ESTRATÉGICA -->
   <div class="container hidden" id="panel-analise">
 
+    <!-- STATUS CARREGAMENTO -->
+    <div id="analise-invest-status" style="font-size:12px;color:#748ffc;padding:10px 0;"></div>
+
     <!-- INSIGHTS AUTOMÁTICOS -->
-    <div class="section-title" style="margin-top:12px;">Insights Estratégicos — O que os dados dizem</div>
+    <div class="section-title" style="margin-top:4px;">Insights Estratégicos — O que os dados dizem</div>
     <div id="analise-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
 
     <!-- RANKING DE MESES -->
@@ -626,6 +629,10 @@ tbody td{padding:10px 16px;font-size:12px;}
     <div class="charts-row" style="margin-top:16px;">
       <div class="chart-box"><h3>Vendas & Agendamentos por Mês</h3><canvas id="ch-analise-vendas"></canvas></div>
       <div class="chart-box"><h3>Ticket Médio por Mês (R$)</h3><canvas id="ch-analise-ticket"></canvas></div>
+    </div>
+    <div class="charts-row" style="margin-top:16px;">
+      <div class="chart-box"><h3>Investimento Meta Ads por Mês (R$)</h3><canvas id="ch-analise-invest"></canvas></div>
+      <div class="chart-box"><h3>ROAS por Mês (Faturamento ÷ Investimento)</h3><canvas id="ch-analise-roas"></canvas></div>
     </div>
 
     <!-- MELHORES CAMPANHAS -->
@@ -1466,8 +1473,45 @@ function setTab(tab) {
 
 // ─── ANÁLISE ESTRATÉGICA ──────────────────────────
 let chartsAnalise = {};
+let investimentoHistorico = {}; // cache do spend mensal buscado da API
 
-function renderAnalise() {
+const MESES_RANGES = {
+  '2025-10': { since:'2025-10-01', until:'2025-10-31' },
+  '2025-11': { since:'2025-11-01', until:'2025-11-30' },
+  '2025-12': { since:'2025-12-01', until:'2025-12-31' },
+  '2026-01': { since:'2026-01-01', until:'2026-01-31' },
+  '2026-02': { since:'2026-02-01', until:'2026-02-28' },
+  '2026-03': { since:'2026-03-01', until:'2026-03-31' },
+  '2026-04': { since:'2026-04-01', until:'2026-04-30' },
+};
+
+async function buscarInvestimentoHistorico() {
+  if (!CFG.token || !CFG.account) return;
+  const el = document.getElementById('analise-invest-status');
+  if (el) el.textContent = 'Buscando investimentos históricos...';
+  try {
+    const resultados = await Promise.all(
+      Object.entries(MESES_RANGES).map(async ([mes, range]) => {
+        const data = await apiGet(`${CFG.account}/insights`, {
+          fields: 'spend',
+          time_range: range,
+          level: 'account',
+        });
+        const spend = parseFloat(data?.data?.[0]?.spend || 0);
+        return { mes, spend };
+      })
+    );
+    resultados.forEach(({ mes, spend }) => { investimentoHistorico[mes] = spend; });
+    if (el) el.textContent = '';
+  } catch(e) {
+    if (el) el.textContent = 'Não foi possível buscar investimentos históricos.';
+  }
+  renderRankingMeses();
+  renderInsightsAnalise();
+  renderAnaliseCharts();
+}
+
+async function renderAnalise() {
   renderInsightsAnalise();
   renderRankingMeses();
   renderAnaliseCharts();
@@ -1477,6 +1521,10 @@ function renderAnalise() {
   const fim = document.getElementById('date-end').value;
   if (ini && fim) {
     document.getElementById('analise-period-label').textContent = `(${fmtBr(ini)} → ${fmtBr(fim)})`;
+  }
+  // Busca investimento histórico se ainda não foi carregado
+  if (Object.keys(investimentoHistorico).length === 0) {
+    await buscarInvestimentoHistorico();
   }
 }
 
@@ -1506,6 +1554,19 @@ function renderInsightsAnalise() {
   if (hOut && hJan && hOut.leads > 0) {
     const diff = ((hJan.leads - hOut.leads) / hOut.leads * 100).toFixed(0);
     if (parseInt(diff) < -50) insights.push({ type:'warn', icon:'📉', text:`Queda forte de leads: <strong>${hOut.leads}</strong> (Out/25) → <strong>${hJan.leads}</strong> (Jan/26) — <strong>${diff}%</strong>. Reveja volume de investimento e segmentação de público.` });
+  }
+
+  // ROAS histórico — melhor e pior mês
+  const comInvest = meses.filter(m => investimentoHistorico[m] > 0 && hist[m]?.faturamento > 0);
+  if (comInvest.length > 0) {
+    const roasPorMes = comInvest.map(m => ({ mes: m, roas: hist[m].faturamento / investimentoHistorico[m] }));
+    roasPorMes.sort((a,b) => b.roas - a.roas);
+    const melhorRoas = roasPorMes[0];
+    insights.push({ type:'success', icon:'📈', text:`Melhor ROAS histórico em <strong>${MESES_PT[melhorRoas.mes]}</strong> — <strong>${melhorRoas.roas.toFixed(2)}x</strong>. Analise o que foi feito nesse mês para replicar.` });
+    if (roasPorMes.length > 1) {
+      const piorRoas = roasPorMes[roasPorMes.length - 1];
+      insights.push({ type:'warn', icon:'📉', text:`Pior ROAS em <strong>${MESES_PT[piorRoas.mes]}</strong> — <strong>${piorRoas.roas.toFixed(2)}x</strong>. Verifique se o investimento estava mal segmentado ou o volume de leads foi insuficiente.` });
+    }
   }
 
   if (dadosCamp && dadosCamp.length > 0) {
@@ -1539,7 +1600,10 @@ function renderRankingMeses() {
   const hist = carregarHistorico();
   const meses = Object.keys(MESES_PT);
   const rows = meses
-    .map(m => ({ mes: m, label: MESES_PT[m], ...hist[m] }))
+    .map(m => ({
+      mes: m, label: MESES_PT[m], ...hist[m],
+      invest: investimentoHistorico[m] || 0,
+    }))
     .filter(r => r.faturamento > 0)
     .sort((a, b) => b.faturamento - a.faturamento);
 
@@ -1548,19 +1612,30 @@ function renderRankingMeses() {
     return;
   }
 
+  const temInvest = rows.some(r => r.invest > 0);
   const melhorFat = rows[0].faturamento;
+
   const tbody = rows.map((r, i) => {
-    const convRate = r.leads > 0 ? ((r.vendas / r.leads) * 100).toFixed(1) + '%' : '—';
-    const barW = Math.round((r.faturamento / melhorFat) * 100);
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-    const fatColor = i === 0 ? '#69db7c' : i === rows.length - 1 ? '#ff8787' : '#e2e8f0';
+    const convRate  = r.leads > 0 ? ((r.vendas / r.leads) * 100).toFixed(1) + '%' : '—';
+    const roas      = r.invest > 0 ? (r.faturamento / r.invest).toFixed(2) + 'x' : '—';
+    const cpv       = r.invest > 0 && r.vendas > 0 ? 'R$' + fmt(r.invest / r.vendas) : '—';
+    const cpl       = r.invest > 0 && r.leads > 0  ? 'R$' + fmt(r.invest / r.leads)  : '—';
+    const barW      = Math.round((r.faturamento / melhorFat) * 100);
+    const medal     = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+    const fatColor  = i === 0 ? '#69db7c' : i === rows.length - 1 ? '#ff8787' : '#e2e8f0';
+    const roasColor = r.invest > 0 ? (r.faturamento/r.invest >= 3 ? '#69db7c' : r.faturamento/r.invest >= 1.5 ? '#748ffc' : '#ff8787') : '#4b5563';
+
     return `<tr>
       <td style="font-size:16px;text-align:center;">${medal}</td>
       <td><strong>${r.label}</strong></td>
       <td class="td-r" style="color:${fatColor};font-weight:700;">R$${fmtK(r.faturamento)}</td>
+      ${temInvest ? `<td class="td-r" style="color:#94a3b8;">R$${r.invest > 0 ? fmt(r.invest) : '—'}</td>` : ''}
+      ${temInvest ? `<td class="td-r" style="color:${roasColor};font-weight:700;">${roas}</td>` : ''}
       <td class="td-r">${r.leads}</td>
       <td class="td-r">${r.vendas}</td>
       <td class="td-r">${convRate}</td>
+      ${temInvest ? `<td class="td-r" style="color:#fbbf24;">${cpv}</td>` : ''}
+      ${temInvest ? `<td class="td-r" style="color:#94a3b8;">${cpl}</td>` : ''}
       <td class="td-r" style="color:#fbbf24;">R$${fmt(r.ticketMedio)}</td>
       <td style="min-width:100px;">
         <div class="rank-bar-wrap">
@@ -1578,9 +1653,16 @@ function renderRankingMeses() {
           <thead>
             <tr>
               <th style="text-align:center;">Pos.</th><th>Mês</th>
-              <th class="td-r">Faturamento</th><th class="td-r">Leads</th>
-              <th class="td-r">Vendas</th><th class="td-r">Conversão</th>
-              <th class="td-r">Ticket Médio</th><th>Rel. ao Melhor</th>
+              <th class="td-r">Faturamento</th>
+              ${temInvest ? '<th class="td-r">Investimento</th>' : ''}
+              ${temInvest ? '<th class="td-r">ROAS</th>' : ''}
+              <th class="td-r">Leads</th>
+              <th class="td-r">Vendas</th>
+              <th class="td-r">Conversão</th>
+              ${temInvest ? '<th class="td-r">Custo/Venda</th>' : ''}
+              ${temInvest ? '<th class="td-r">Custo/Lead</th>' : ''}
+              <th class="td-r">Ticket Médio</th>
+              <th>Rel. ao Melhor</th>
             </tr>
           </thead>
           <tbody>${tbody}</tbody>
@@ -1638,6 +1720,29 @@ function renderAnaliseCharts() {
     ]},
     options:{ responsive:true, plugins:{ legend:baseLegend },
       scales:{ x:{...baseScales.x}, y:{...baseScales.y,ticks:{...tickOpts,callback:v=>'R$'+fmtK(v)}} } }
+  });
+
+  chartsAnalise.invest = new Chart(document.getElementById('ch-analise-invest'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Investimento', data:meses.map(m=>investimentoHistorico[m]||0), backgroundColor:'#6366f1', borderRadius:4 }
+    ]},
+    options:{ responsive:true, plugins:{ legend:baseLegend },
+      scales:{ x:{...baseScales.x}, y:{...baseScales.y,ticks:{...tickOpts,callback:v=>'R$'+fmtK(v)}} } }
+  });
+
+  const roasData = meses.map(m => {
+    const inv = investimentoHistorico[m] || 0;
+    const fat = hist[m]?.faturamento || 0;
+    return inv > 0 ? parseFloat((fat/inv).toFixed(2)) : null;
+  });
+  chartsAnalise.roas = new Chart(document.getElementById('ch-analise-roas'), {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'ROAS', data:roasData, borderColor:'#69db7c', backgroundColor:'rgba(105,219,124,0.08)', fill:true, tension:0.4, pointBackgroundColor:'#69db7c', pointRadius:5, spanGaps:true }
+    ]},
+    options:{ responsive:true, plugins:{ legend:baseLegend },
+      scales:{ x:{...baseScales.x}, y:{...baseScales.y,ticks:{...tickOpts,callback:v=>v+'x'},suggestedMin:0} } }
   });
 }
 
