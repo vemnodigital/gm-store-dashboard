@@ -25,8 +25,7 @@ def trocar(html, antigo, novo):
 html = ADMIN.read_text(encoding='utf-8')
 html = trocar(html, "const MODO = 'admin';", "const MODO = 'cliente';")
 html = trocar(html, '<title>GM Store — Dashboard Live</title>', '<title>GM Store — Relatório de Performance</title>')
-# Dados de vendas exportados pelo admin (carregado antes do script principal; se faltar, o painel abre sem vendas)
-html = trocar(html, '\n<script>\n', '\n<script src="gmstore_dados.js"></script>\n<script>\n')
+# O <script src="gmstore_dados.js"> já vem do admin — os dois leem as vendas desse arquivo
 
 token, conta = os.environ.get('GM_TOKEN', '').strip(), os.environ.get('GM_ACCOUNT', '').strip()
 if token and conta:

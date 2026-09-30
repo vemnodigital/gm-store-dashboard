@@ -870,9 +870,9 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
       <button class="btn-analise so-admin" id="btn-toggle-analise" onclick="toggleAnalise()">📝 Análise</button>
       <button class="btn-export" onclick="window.print()">⬇ PDF</button>
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()">☀ Claro</button>
-      <button class="btn-settings so-admin" onclick="exportarDadosCliente()" title="Baixa gmstore_dados.js com as vendas — suba junto com a versão do cliente">⬇ Dados cliente</button>
+      <button class="btn-settings so-admin" onclick="exportarDadosCliente()" title="Baixa gmstore_dados.js cifrado com as vendas — suba no GitHub no lugar do anterior">⬇ Dados cliente</button>
       <button class="btn-settings so-admin" onclick="abrirConfig()">⚙ Config</button>
-      <button class="btn-settings so-cliente" onclick="sairLogin()" title="Sair e esquecer a senha neste navegador">⎋ Sair</button>
+      <button class="btn-settings" onclick="sairLogin()" title="Sair e esquecer a senha neste navegador">⎋ Sair</button>
     </div>
   </header>
 
@@ -1140,6 +1140,7 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
 
 </div><!-- /dashboard -->
 
+<!-- Vendas publicadas (botão "⬇ Dados cliente"); se faltar, o painel usa só o localStorage -->
 <script src="gmstore_dados.js"></script>
 <script>
 // ─── CONFIG ───────────────────────────────────────
@@ -1152,13 +1153,45 @@ const FIXED_TOKEN      = '';          // ex: 'EAAxxxxxxxxxxxxxxxx'
 const FIXED_ACCOUNT    = '';          // ex: 'act_1234567890'
 const FIXED_KW_STA     = 'STA';
 const FIXED_KW_CASTELO = 'CASTELO';
-const LOGIN_SENHA      = 'gmstore2026*'; // senha de acesso para o cliente
-// 'admin' = este arquivo (sem senha, com config/vendas/análise)
+// A senha NÃO fica no código: ela é a chave que decifra gmstore_dados.js (ver CRIPTOGRAFIA)
+// 'admin' = este arquivo (config/vendas/análise)
 // 'cliente' = gmstore_dashboard_cliente.html, gerado por gerar_cliente.py — não editar o cliente à mão
 const MODO = 'cliente';
 const EH_CLIENTE = MODO === 'cliente';
 
-// Vendas e histórico: o cliente lê de gmstore_dados.js (exportado pelo admin), sem tocar no localStorage
+// ─── CRIPTOGRAFIA DAS VENDAS ──────────────────────────────────────────────
+// gmstore_dados.js é publicado cifrado (AES-GCM 256, chave derivada da senha via PBKDF2-SHA256).
+// Senha certa decifra o arquivo e abre o painel; senha errada falha na decifragem.
+const CRIPTO_ITER = 600000;
+const CHAVE_KEY = 'gmstore_chave'; // "Manter conectado": chave derivada (nunca a senha) neste navegador
+let CHAVE = null;                  // { key: CryptoKey, salt, iter } depois do login — usada no "⬇ Dados cliente"
+
+function paraB64(bytes) {
+  bytes = new Uint8Array(bytes);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function deB64(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+
+async function derivarChave(senha, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: deB64(salt), iterations: iter || CRIPTO_ITER, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+}
+async function decifrarDados(key, pacote) {
+  const claro = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(pacote.iv) }, key, deB64(pacote.dados));
+  return JSON.parse(new TextDecoder().decode(claro));
+}
+// Mantém salt e iterações da chave atual: logins lembrados continuam valendo após cada exportação
+async function cifrarDados({ key, salt, iter }, dados) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cifra = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(dados)));
+  return { v: 1, iter, salt, iv: paraB64(iv), dados: paraB64(cifra) };
+}
+
+// Vendas e histórico: o cliente lê de gmstore_dados.js (decifrado no login), sem tocar no localStorage
 function lerDados(chave) {
   if (EH_CLIENTE && window.GM_DADOS) return (chave === 'gmstore_vendas' ? GM_DADOS.vendas : GM_DADOS.historico) || {};
   return JSON.parse(localStorage.getItem(chave) || '{}');
@@ -1243,46 +1276,71 @@ function voltarConfig() {
   }
 }
 
-// "Manter conectado": guarda uma marca derivada da senha — se LOGIN_SENHA mudar, pede login de novo
-const LOGIN_KEY = 'gmstore_login';
-function marcaLogin() { return btoa(unescape(encodeURIComponent('gm:' + LOGIN_SENHA))); }
-function loginSalvo() {
-  try { return localStorage.getItem(LOGIN_KEY) === marcaLogin(); } catch (e) { return false; }
-}
-
 function sairLogin() {
-  try { localStorage.removeItem(LOGIN_KEY); } catch (e) {}
+  try { localStorage.removeItem(CHAVE_KEY); } catch (e) {}
   location.reload();
 }
 
-function fazerLogin() {
-  const senha = document.getElementById('input-senha').value;
+function mostrarErroLogin(msg) {
   const erro = document.getElementById('login-erro');
-  if (senha === LOGIN_SENHA) {
+  erro.textContent = msg;
+  erro.style.display = 'block';
+}
+
+// Decifra gmstore_dados.js com a chave; lança erro se a chave (senha) estiver errada
+async function desbloquear(chave) {
+  window.GM_DADOS = await decifrarDados(chave.key, window.GM_DADOS_CRIPTO);
+  CHAVE = chave;
+  HISTORICO_INICIAL = {};
+  MESES_PLANILHA.forEach(mes => { if (GM_DADOS.historico?.[mes]) HISTORICO_INICIAL[mes] = GM_DADOS.historico[mes]; });
+  if (!EH_CLIENTE) prepararDadosAdmin();
+  document.getElementById('login-erro').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  abrirDashboardAposLogin();
+}
+
+async function fazerLogin() {
+  const campo = document.getElementById('input-senha');
+  const btn = document.querySelector('.btn-login');
+  const pacote = window.GM_DADOS_CRIPTO;
+  if (!pacote) { mostrarErroLogin('Dados de vendas não encontrados (gmstore_dados.js).'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try {
+    const chave = { key: await derivarChave(campo.value, pacote.salt, pacote.iter), salt: pacote.salt, iter: pacote.iter };
+    await desbloquear(chave);
     try {
-      if (document.getElementById('input-lembrar').checked) localStorage.setItem(LOGIN_KEY, marcaLogin());
-      else localStorage.removeItem(LOGIN_KEY);
+      if (document.getElementById('input-lembrar').checked) {
+        const raw = paraB64(await crypto.subtle.exportKey('raw', chave.key));
+        localStorage.setItem(CHAVE_KEY, JSON.stringify({ k: raw, salt: chave.salt, iter: chave.iter }));
+      } else localStorage.removeItem(CHAVE_KEY);
     } catch (e) {}
-    erro.style.display = 'none';
-    document.getElementById('login-screen').style.display = 'none';
-    abrirDashboardAposLogin();
-  } else {
-    erro.style.display = 'block';
-    document.getElementById('input-senha').value = '';
-    document.getElementById('input-senha').focus();
+  } catch (e) {
+    mostrarErroLogin('Senha incorreta. Tente novamente.');
+    campo.value = '';
+    campo.focus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
   }
 }
 
-function carregarConfig() {
+async function carregarConfig() {
   // Copia logo da GM Store para tela de login
   const logoSrc = document.querySelector('#dashboard .logo-area img');
   if (logoSrc) document.getElementById('login-logo').src = logoSrc.src;
 
-  // Admin não tem senha. Cliente: login lembrado neste navegador pula a tela de senha
-  if (!EH_CLIENTE || loginSalvo()) {
-    document.getElementById('login-screen').style.display = 'none';
-    abrirDashboardAposLogin();
-    return;
+  // Login lembrado neste navegador pula a tela de senha (vale até a senha mudar)
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_KEY) || 'null');
+    const pacote = window.GM_DADOS_CRIPTO;
+    if (salvo && pacote && salvo.salt === pacote.salt) {
+      const key = await crypto.subtle.importKey('raw', deB64(salvo.k), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
+      await desbloquear({ key, salt: salvo.salt, iter: salvo.iter });
+      return;
+    }
+  } catch (e) {
+    try { localStorage.removeItem(CHAVE_KEY); } catch (e2) {}
   }
 
   document.getElementById('login-screen').style.display = 'flex';
@@ -1311,11 +1369,9 @@ function abrirDashboardAposLogin() {
     setPreset('mesant');
   } else if (EH_CLIENTE) {
     // Cliente nunca vê a configuração
-    try { localStorage.removeItem(LOGIN_KEY); } catch (e) {}
+    try { localStorage.removeItem(CHAVE_KEY); } catch (e) {}
     document.getElementById('login-screen').style.display = 'flex';
-    const erro = document.getElementById('login-erro');
-    erro.textContent = 'Dashboard em configuração. Fale com a Vem no Digital.';
-    erro.style.display = 'block';
+    mostrarErroLogin('Dashboard em configuração. Fale com a Vem no Digital.');
   } else {
     document.getElementById('setup-screen').style.display = 'flex';
   }
@@ -2075,15 +2131,9 @@ function atualizarCardsVendas() {
 }
 
 // ─── HISTÓRICO MENSAL ──────────────────────────────
-const HISTORICO_INICIAL = {
-  '2025-10': { leads:221, agendamentos:14, vendas:14, faturamento:21184, ticketMedio:1513,  fatSTA:13300, fatCastelo:6634, fatOnline:1250, leadsSTA:9, leadsCastelo:4, leadsOnline:1 },
-  '2025-11': { leads:590, agendamentos:17, vendas:21, faturamento:18904, ticketMedio:900,   fatSTA:9355,  fatCastelo:6279, fatOnline:2470, leadsSTA:9, leadsCastelo:7, leadsOnline:5 },
-  '2025-12': { leads:402, agendamentos:26, vendas:26, faturamento:22874, ticketMedio:879,   fatSTA:16030, fatCastelo:4399, fatOnline:1175, leadsSTA:17,leadsCastelo:6, leadsOnline:3 },
-  '2026-01': { leads:50,  agendamentos:20, vendas:19, faturamento:13252, ticketMedio:697,   fatSTA:8015,  fatCastelo:3942, fatOnline:1295, leadsSTA:12,leadsCastelo:5, leadsOnline:2 },
-  '2026-02': { leads:52,  agendamentos:13, vendas:13, faturamento:4498,  ticketMedio:346,   fatSTA:2961,  fatCastelo:501,  fatOnline:1036, leadsSTA:8, leadsCastelo:2, leadsOnline:3 },
-  '2026-03': { leads:107, agendamentos:17, vendas:14, faturamento:10403, ticketMedio:743,   fatSTA:5741,  fatCastelo:3872, fatOnline:790,  leadsSTA:8, leadsCastelo:5, leadsOnline:1 },
-  '2026-04': { leads:54,  agendamentos:7,  vendas:4,  faturamento:11100, ticketMedio:2775,  fatSTA:1310,  fatCastelo:0,    fatOnline:1725, leadsSTA:1, leadsCastelo:0, leadsOnline:3 },
-};
+// Meses da planilha "GM Store 6 Meses.xlsx" — os valores vêm do gmstore_dados.js cifrado (preenchido em desbloquear)
+const MESES_PLANILHA = ['2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04'];
+let HISTORICO_INICIAL = {};
 // Meses de Out/25 até o mês atual — a lista cresce sozinha a cada mês
 const MES_INICIO = '2025-10';
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -2759,15 +2809,19 @@ function renderAnaliseCriativos() {
 }
 
 // ─── EXPORTAR DADOS PARA A VERSÃO DO CLIENTE ─────────
-// Gera gmstore_dados.js (vendas + histórico deste navegador). Suba junto com gmstore_dashboard_cliente.html
-function exportarDadosCliente() {
+// Gera gmstore_dados.js cifrado com a senha do login (vendas + histórico deste navegador).
+// Suba no GitHub/Hostinger no lugar do anterior — admin e cliente leem desse arquivo
+async function exportarDadosCliente() {
+  if (!CHAVE) { alert('Entre com a senha antes de exportar.'); return; }
   const dados = {
     geradoEm:  new Date().toISOString(),
     vendas:    JSON.parse(localStorage.getItem('gmstore_vendas') || '{}'),
     historico: JSON.parse(localStorage.getItem('gmstore_historico') || '{}'),
   };
+  const pacote = await cifrarDados(CHAVE, dados);
   const conteudo = '// Gerado pelo dashboard admin GM Store em ' + new Date().toLocaleString('pt-BR') + '\n'
-                 + 'window.GM_DADOS = ' + JSON.stringify(dados, null, 2) + ';\n';
+                 + '// Vendas cifradas (AES-GCM) — só abrem com a senha do painel\n'
+                 + 'window.GM_DADOS_CRIPTO = ' + JSON.stringify(pacote) + ';\n';
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([conteudo], { type: 'text/javascript' }));
   a.download = 'gmstore_dados.js';
@@ -2788,16 +2842,11 @@ document.addEventListener('click', e => {
   if (e.target === document.getElementById('modal-historico')) fecharModalHistorico();
 });
 
-// INIT
-window.onload = () => {
-  // Força atualização completa de todos os meses com dados da planilha
-  // Não preserva dados antigos para evitar inconsistências
-  if (EH_CLIENTE) {
-    document.body.classList.add('modo-cliente');
-    document.title = 'GM Store — Relatório de Performance';
-  }
-  // Pré-carga da planilha: só no admin (o cliente lê gmstore_dados.js e não grava nada)
-  if (!EH_CLIENTE) {
+// Admin, depois do login: grava planilha + gmstore_dados.js no localStorage deste navegador
+// (o cliente lê direto do arquivo decifrado e não grava nada)
+function prepararDadosAdmin() {
+  // Meses da planilha ficam fixos: sempre regravados a partir dela
+  {
     const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
     Object.entries(HISTORICO_INICIAL).forEach(([mes, h]) => {
       vendas[mes] = {
@@ -2811,9 +2860,26 @@ window.onload = () => {
     // Pré-carrega histórico sem sobrescrever dados já editados pelo usuário
     const histSalvo = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
     const histMerge = Object.assign({}, HISTORICO_INICIAL, histSalvo);
-    // Força faturamento de abril atualizado (11.100)
-    histMerge['2026-04'] = Object.assign({}, histMerge['2026-04'], { faturamento: 11100, ticketMedio: 2775 });
     localStorage.setItem('gmstore_historico', JSON.stringify(histMerge));
+
+    // gmstore_dados.js publicado mais novo que o último aplicado neste navegador → seus meses entram
+    // por cima; depois disso, o que for lançado aqui prevalece até o próximo arquivo publicado
+    const pub = window.GM_DADOS;
+    if (pub && pub.geradoEm && pub.geradoEm > (localStorage.getItem('gmstore_dados_aplicado') || '')) {
+      const v = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+      const h = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
+      localStorage.setItem('gmstore_vendas', JSON.stringify(Object.assign(v, pub.vendas || {})));
+      localStorage.setItem('gmstore_historico', JSON.stringify(Object.assign(h, pub.historico || {})));
+      localStorage.setItem('gmstore_dados_aplicado', pub.geradoEm);
+    }
+  }
+}
+
+// INIT
+window.onload = () => {
+  if (EH_CLIENTE) {
+    document.body.classList.add('modo-cliente');
+    document.title = 'GM Store — Relatório de Performance';
   }
 
   // Carrega tema salvo
