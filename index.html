@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GM Store — Dashboard Live</title>
+<title>GM Store — Relatório de Performance</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -1140,6 +1140,7 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
 
 </div><!-- /dashboard -->
 
+<script src="gmstore_dados.js"></script>
 <script>
 // ─── CONFIG ───────────────────────────────────────
 let CFG = {};
@@ -1154,7 +1155,7 @@ const FIXED_KW_CASTELO = 'CASTELO';
 const LOGIN_SENHA      = 'gmstore2026*'; // senha de acesso para o cliente
 // 'admin' = este arquivo (sem senha, com config/vendas/análise)
 // 'cliente' = gmstore_dashboard_cliente.html, gerado por gerar_cliente.py — não editar o cliente à mão
-const MODO = 'admin';
+const MODO = 'cliente';
 const EH_CLIENTE = MODO === 'cliente';
 
 // Vendas e histórico: o cliente lê de gmstore_dados.js (exportado pelo admin), sem tocar no localStorage

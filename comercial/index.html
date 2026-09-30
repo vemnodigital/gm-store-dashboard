@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GM Store · Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#111110; --surface:#1a1a19; --surface-2:#232321; --border:#2e2e2b;
+  --text:#ffffff; --text-2:#c3c2b7; --text-3:#8d8c85;
+  --accent:#3987e5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s-other:#6f6e69;
+  --good:#3fb950; --bad:#f06a6a; --warn:#d9a400;
+  --grid:rgba(255,255,255,.06);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#f5f5f3; --surface:#fcfcfb; --surface-2:#f0efec; --border:#e2e1dc;
+    --text:#0b0b0b; --text-2:#52514e; --text-3:#7a7974;
+    --accent:#2a78d6;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s-other:#a8a7a1;
+    --good:#1a7f37; --bad:#c62828; --warn:#9a6700;
+    --grid:rgba(0,0,0,.06);
+  }
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f5f5f3; --surface:#fcfcfb; --surface-2:#f0efec; --border:#e2e1dc;
+  --text:#0b0b0b; --text-2:#52514e; --text-3:#7a7974;
+  --accent:#2a78d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s-other:#a8a7a1;
+  --good:#1a7f37; --bad:#c62828; --warn:#9a6700;
+  --grid:rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+header{border-bottom:1px solid var(--border);background:var(--surface)}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.src{font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text-3)}
+.dot.live{background:var(--good)} .dot.csv{background:var(--accent)} .dot.demo{background:var(--warn)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:8px 12px;border-radius:8px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--text-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.filters{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:14px 0}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);background:var(--surface);color:var(--text-2);padding:6px 11px;border-radius:999px;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.chip .sw{width:8px;height:8px;border-radius:2px}
+.flabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);font-weight:600;margin-right:4px}
+.custom{display:none;gap:6px;align-items:center}
+.custom.on{display:flex}
+input[type=date],input[type=text],input[type=number],input[type=password]{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 9px;font:inherit;font-size:13px}
+.period-note{font-size:12px;color:var(--text-3);margin-bottom:14px}
+section{margin-bottom:28px}
+h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:12px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font-size:12px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text-3)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .lbl{font-size:12px;color:var(--text-2);font-weight:500;display:flex;justify-content:space-between;gap:8px}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12px;color:var(--text-3)}
+.delta{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta.good{color:var(--good)} .delta.bad{color:var(--bad)} .delta.flat{color:var(--text-3)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.chart-card h3{font-size:14px;font-weight:600;margin-bottom:2px}
+.chart-card .hint{font-size:12px;color:var(--text-3);margin-bottom:10px}
+.chart-box{position:relative;height:240px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);font-weight:600;text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface-2)}
+td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:none}
+.tl th,.tl td{text-align:left}
+.tl th:nth-last-child(-n+2),.tl td:nth-last-child(-n+2){text-align:right}
+tr.total td{font-weight:700;background:var(--surface-2)}
+td .muted{color:var(--text-3);font-size:11.5px}
+.matur{color:var(--warn);font-size:11px;font-weight:600}
+.store-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-bottom:12px}
+.store-card{border-top:3px solid var(--sc)}
+.store-card .nm{font-weight:700;font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between}
+.store-card .nm span{font-size:12px;color:var(--text-3);font-weight:500}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.mini div{font-size:11.5px;color:var(--text-3)}
+.mini b{display:block;font-size:16px;color:var(--text);font-variant-numeric:tabular-nums}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:grid;grid-template-columns:minmax(110px,190px) 1fr 70px;gap:10px;align-items:center;font-size:12.5px}
+.bar-row .nm{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:12px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.bar-row .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.bar-row .v small{color:var(--text-3);font-weight:400}
+.insights{display:grid;gap:8px}
+.ins{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-size:13.5px}
+.ins .ic{font-weight:800;width:20px;text-align:center;flex-shrink:0}
+.ins.good .ic{color:var(--good)} .ins.bad .ic{color:var(--bad)} .ins.warn .ic{color:var(--warn)} .ins.info .ic{color:var(--accent)}
+.empty{color:var(--text-3);font-size:13px;padding:12px 0}
+a{color:var(--accent)}
+.tabs-tbl{display:flex;gap:4px;margin-bottom:10px}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow-y:auto}
+.modal-bg.on{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:560px;width:100%;padding:22px}
+.modal h3{font-size:16px;margin-bottom:4px}
+.modal p{font-size:13px;color:var(--text-2);margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+.field input{width:100%}
+.field .help{font-size:11.5px;color:var(--text-3);margin-top:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.modal .actions{justify-content:flex-end}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;display:none;z-index:60;max-width:90vw}
+.toast.on{display:block}
+footer{color:var(--text-3);font-size:12px;padding:20px 0 40px;border-top:1px solid var(--border)}
+@media (max-width:640px){
+  .kpi .val{font-size:22px}
+  .bar-row{grid-template-columns:100px 1fr 60px}
+  .row2{grid-template-columns:1fr}
+}
+@media print{
+  header .actions,.filters .custom,.modal-bg,.toast{display:none!important}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hdr">
+    <div class="brand">
+      <div class="logo">GM</div>
+      <div>
+        <h1>GM Store · Dashboard Comercial</h1>
+        <div class="src"><span class="dot" id="srcDot"></span><span id="srcTxt">Carregando…</span></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnRefresh" title="Buscar dados novamente">↻ Atualizar</button>
+      <button class="btn" id="btnImport">Importar CSV</button>
+      <button class="btn" id="btnTheme" title="Alternar tema">◐</button>
+      <button class="btn" onclick="window.print()">PDF</button>
+      <button class="btn primary" id="btnCfg">Conectar Kommo</button>
+      <input type="file" id="fileCsv" accept=".csv,text/csv" multiple hidden>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="filters">
+    <div class="seg" id="presets">
+      <span class="flabel">Período</span>
+      <button class="chip" data-p="4s">4 semanas</button>
+      <button class="chip" data-p="8s">8 semanas</button>
+      <button class="chip" data-p="12s">12 semanas</button>
+      <button class="chip" data-p="mes">Este mês</button>
+      <button class="chip" data-p="mesant">Mês passado</button>
+      <button class="chip" data-p="custom">Personalizado</button>
+    </div>
+    <div class="custom" id="customRange">
+      <input type="date" id="dFrom"> <span style="color:var(--text-3)">até</span> <input type="date" id="dTo">
+    </div>
+    <div class="seg" id="lojaFilter"><span class="flabel">Loja</span></div>
+  </div>
+  <div class="period-note" id="periodNote"></div>
+
+  <section>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section>
+    <h2>Leitura rápida <small>gerada automaticamente a partir dos números do período</small></h2>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <section>
+    <h2>Semana a semana <small>semanas de segunda a domingo</small></h2>
+    <div class="legend" id="weekLegend"></div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="card chart-card"><h3>Leads por semana</h3><div class="hint">Leads que entraram no CRM, por loja</div><div class="chart-box"><canvas id="chLeads"></canvas></div></div>
+      <div class="card chart-card"><h3>Vendas por semana</h3><div class="hint">Vendas fechadas (ganhas) na semana, por loja</div><div class="chart-box"><canvas id="chVendas"></canvas></div></div>
+      <div class="card chart-card"><h3>Faturamento por semana</h3><div class="hint">Soma do valor das vendas ganhas na semana</div><div class="chart-box"><canvas id="chFat"></canvas></div></div>
+      <div class="card chart-card"><h3>Conversão da safra</h3><div class="hint">Dos leads que entraram em cada semana, % que já comprou · pontos vazados = safra ainda em maturação</div><div class="chart-box"><canvas id="chConv"></canvas></div></div>
+    </div>
+    <div class="tbl-wrap"><table id="tblWeeks"></table></div>
+  </section>
+
+  <section>
+    <h2>Por loja <small>mesma separação usada nas campanhas</small></h2>
+    <div class="store-cards" id="storeCards"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2 style="margin-bottom:4px">Funil ativo agora</h2>
+      <div class="hint" style="font-size:12px;color:var(--text-3);margin-bottom:12px" id="funilHint"></div>
+      <div class="bars" id="funil"></div>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:4px">Motivos de perda</h2>
+      <div class="hint" style="font-size:12px;color:var(--text-3);margin-bottom:12px" id="perdaHint"></div>
+      <div class="bars" id="perdas"></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div>
+      <h2>Vendedores</h2>
+      <div class="tbl-wrap"><table id="tblResp"></table></div>
+    </div>
+    <div>
+      <h2>Origem do lead <small>base para cruzar com tráfego</small></h2>
+      <div class="tbl-wrap"><table id="tblOrigem"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Leads parados <small id="paradoHint"></small></h2>
+    <div class="tbl-wrap"><table id="tblParados" class="tl"></table></div>
+  </section>
+
+  <section>
+    <h2>Qualidade dos dados do CRM</h2>
+    <div class="grid3" id="quality"></div>
+  </section>
+
+  <footer>
+    <b>Como os números são calculados:</b> Leads = criados no período · Vendas e faturamento = leads ganhos com data de fechamento no período ·
+    Conversão da safra = dos leads criados no período, quantos já estão ganhos · Ciclo = dias entre criação e fechamento das vendas do período ·
+    Comparação sempre contra o período anterior de mesmo tamanho. Vem no Digital.
+  </footer>
+</div>
+
+<!-- Modal de configuração -->
+<div class="modal-bg" id="cfgModal">
+  <div class="modal">
+    <h3>Conectar ao Kommo</h3>
+    <p>O dashboard busca os dados por um webhook do n8n (o token do Kommo fica só no n8n, nunca nesta página). Veja <code>gm_store/comercial/n8n/</code>.</p>
+    <div class="field"><label>URL do webhook n8n</label><input type="text" id="cWebhook" placeholder="https://seu-n8n.com/webhook/gm-comercial"></div>
+    <div class="row2">
+      <div class="field"><label>Chave de acesso</label><input type="password" id="cKey" placeholder="mesma do GMC_KEY no n8n"></div>
+      <div class="field"><label>Subdomínio Kommo</label><input type="text" id="cSub" placeholder="gmstore"><div class="help">Para abrir o lead direto no Kommo</div></div>
+    </div>
+    <hr>
+    <div class="row2">
+      <div class="field"><label>Campo da loja</label><input type="text" id="cCampoLoja"><div class="help">Nome do campo personalizado no Kommo</div></div>
+      <div class="field"><label>Campo de origem</label><input type="text" id="cCampoOrigem"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Lead parado após (dias)</label><input type="number" id="cDias" min="1"></div>
+      <div class="field"><label>Meta de conversão (%)</label><input type="number" id="cMeta" min="0" step="0.5"><div class="help">Opcional — vazio = sem meta</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="cDemo">Usar demonstração</button>
+      <button class="btn" id="cCancel">Cancelar</button>
+      <button class="btn primary" id="cSave">Salvar e conectar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Configuração e estado
+   ========================================================= */
+const CFG_KEY = 'gmc_cfg_v1';
+const DATA_KEY = 'gmc_data_v1';
+const DAY = 864e5;
+
+const LOJAS = [
+  { id: 'STA',     label: 'Loja STA',         color: '--s1' },
+  { id: 'CASTELO', label: 'Loja Castelo',     color: '--s2' },
+  { id: 'ONLINE',  label: 'Online / Entrega', color: '--s3' },
+  { id: 'SEM',     label: 'Sem loja',         color: '--s-other' },
+];
+
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+
+const cfg = Object.assign({
+  webhook: '', key: '', sub: '',
+  campoLoja: 'Loja Visitada', campoOrigem: 'Origem do contato',
+  diasParado: 3, meta: '', theme: '',
+}, lsGet(CFG_KEY) || {});
+
+const state = {
+  source: 'demo',        // live | csv | demo
+  leads: [],
+  updatedAt: null,
+  preset: '8s',
+  from: null, to: null,
+  loja: 'all',
+};
+
+/* =========================================================
+   Utilidades
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf0 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+const brl = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v || 0);
+const brlK = v => v >= 1000 ? 'R$ ' + (v / 1000).toFixed(1).replace('.', ',') + 'k' : brl(v);
+const pct = v => v == null || isNaN(v) ? '—' : (v * 100).toFixed(1).replace('.', ',') + '%';
+const days = v => v == null || isNaN(v) ? '—' : v.toFixed(1).replace('.', ',') + ' dias';
+const ddmm = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sod = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const eod = d => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+function sow(d) { const x = sod(d); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); return x; }
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - y0) / DAY + 1) / 7);
+}
+const toInput = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function toast(msg, ms = 3500) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); }
+
+function lojaDe(...fontes) {
+  for (const f of fontes) {
+    const u = String(f || '').toUpperCase();
+    if (!u) continue;
+    if (/CASTELO/.test(u)) return 'CASTELO';
+    if (/\bSTA\b|STA\.|SANTA/.test(u)) return 'STA';
+    if (/ENTREGA|ONLINE|DELIVERY|ENVIO|E-?COMMERCE/.test(u)) return 'ONLINE';
+  }
+  return 'SEM';
+}
+
+/* =========================================================
+   Fontes de dados
+   ========================================================= */
+
+// 1) Kommo ao vivo via webhook n8n
+async function loadLive() {
+  const from = Math.floor((Date.now() - 400 * DAY) / 1000);
+  const url = new URL(cfg.webhook);
+  url.searchParams.set('from', from);
+  if (cfg.key) url.searchParams.set('key', cfg.key);
+  const r = await fetch(url.toString());
+  if (!r.ok) throw new Error(`Webhook respondeu ${r.status}`);
+  const j = await r.json();
+  const payload = Array.isArray(j) ? j[0] : j;
+  if (payload.error) throw new Error(payload.error);
+  if (payload.subdomain && !cfg.sub) { cfg.sub = payload.subdomain; lsSet(CFG_KEY, cfg); }
+  return (payload.leads || []).map(l => {
+    const campos = l.campos || {};
+    const tags = (l.tags || []).join(', ');
+    return {
+      id: l.id,
+      nome: l.nome || `Lead #${l.id}`,
+      criado: l.criado ? l.criado * 1000 : null,
+      fechado: l.fechado ? l.fechado * 1000 : null,
+      atualizado: l.atualizado ? l.atualizado * 1000 : null,
+      valor: Number(l.valor) || 0,
+      status: l.status,
+      etapa: l.etapa || '—',
+      etapaOrdem: l.etapaOrdem ?? 999,
+      funil: l.funil || '',
+      resp: l.resp || 'Sem responsável',
+      origem: campos[cfg.campoOrigem] || 'Não informado',
+      loja: lojaDe(campos[cfg.campoLoja], l.funil, tags),
+      motivo: l.status === 'lost' ? (l.motivo || 'Sem motivo informado') : null,
+    };
+  });
+}
+
+// 2) CSV exportado do Kommo
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.slice(0, text.indexOf('\n'));
+  const delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === delim) { row.push(cell.trim()); cell = ''; }
+    else if (c === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+    else if (c !== '\r') cell += c;
+  }
+  if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
+  return rows.filter(r => r.some(x => x));
+}
+function parseKommoDate(s) {
+  if (!s || /não fechado|not closed/i.test(s)) return null;
+  let m = s.match(/(\d{2})[./](\d{2})[./](\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)).getTime();
+  const t = Date.parse(s); return isNaN(t) ? null : t;
+}
+function leadsFromCSV(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error('CSV vazio ou inválido');
+  const h = rows[0];
+  const col = (...names) => { for (const n of names) { const i = h.findIndex(x => x.toLowerCase() === n.toLowerCase()); if (i >= 0) return i; } return -1; };
+  const c = {
+    id: col('ID'), nome: col('Lead título', 'Nome do lead', 'Lead title'),
+    valor: col('Lead venda R$', 'Venda', 'Sale'), resp: col('Usuário responsável', 'Responsible user'),
+    criado: col('Criado em', 'Created at'), fechado: col('Fechado às', 'Fechado em', 'Closed at'),
+    atualizado: col('Modificado em', 'Última modificação', 'Updated at'),
+    tags: col('Tags'), etapa: col('Etapa do lead', 'Lead stage'), funil: col('Funil de vendas', 'Pipeline'),
+    origem: col(cfg.campoOrigem, 'Origem do contato'), loja: col(cfg.campoLoja, 'Loja Visitada'),
+  };
+  if (c.criado < 0 || c.etapa < 0) throw new Error('Colunas "Criado em" e "Etapa do lead" não encontradas');
+  const g = (r, i) => i >= 0 ? (r[i] || '') : '';
+  return rows.slice(1).map((r, idx) => {
+    const etapaRaw = g(r, c.etapa);
+    let status = 'open', motivo = null, etapa = etapaRaw;
+    if (/venda ganha|closed.?-?.?won|^ganho/i.test(etapaRaw)) status = 'won';
+    else if (/venda perdida|closed.?-?.?lost|^perdid/i.test(etapaRaw)) {
+      status = 'lost';
+      const m = etapaRaw.match(/\((.+)\)/);
+      motivo = m ? m[1] : 'Sem motivo informado';
+      etapa = 'Venda perdida';
+    }
+    return {
+      id: parseInt(g(r, c.id)) || `csv${idx}`,
+      nome: g(r, c.nome) || `Lead #${g(r, c.id)}`,
+      criado: parseKommoDate(g(r, c.criado)),
+      fechado: parseKommoDate(g(r, c.fechado)),
+      atualizado: parseKommoDate(g(r, c.atualizado)),
+      valor: parseFloat(String(g(r, c.valor)).replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')) || 0,
+      status, etapa, etapaOrdem: 999,
+      funil: g(r, c.funil),
+      resp: g(r, c.resp) || 'Sem responsável',
+      origem: g(r, c.origem) || 'Não informado',
+      loja: lojaDe(g(r, c.loja), g(r, c.funil), g(r, c.tags)),
+      motivo,
+    };
+  }).filter(l => l.criado);
+}
+
+// 3) Dados de demonstração (determinísticos)
+function demoLeads() {
+  let seed = 42; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pick = (arr, w) => { let x = rnd() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < arr.length; i++) { x -= w[i]; if (x <= 0) return arr[i]; } return arr[arr.length - 1]; };
+  const etapas = ['Leads de Entrada', 'Contato Inicial', 'Conexão - Tentativa 01', 'Conexão - Tentativa 02', 'Conexão - Tentativa 03', 'Conexão Realizada', 'Qualificado / Agendar Visita', 'Visita Agendada', 'Oportunidade'];
+  const motivos = ['Parou de responder', 'Orçamento insuficiente', 'Sem conexão', 'Comprado do concorrente', 'Produto não se encaixa', 'Não respondeu'];
+  const resps = ['Vendedor A', 'Vendedor B', 'Vendedor C'];
+  const origens = ['Meta Ads · WhatsApp', 'Instagram orgânico', 'Indicação', 'Google'];
+  const out = []; const now = Date.now(); let id = 10000;
+  for (let d = 200; d >= 0; d--) {
+    const dia = now - d * DAY;
+    const n = Math.round(3 + rnd() * 4 + (d < 60 ? 1.5 : 0));
+    for (let k = 0; k < n; k++) {
+      const criado = sod(dia).getTime() + 8 * 36e5 + rnd() * 12 * 36e5;
+      if (criado > now) continue;
+      const loja = pick(['STA', 'CASTELO', 'ONLINE', 'SEM'], [45, 33, 14, 8]);
+      const pWin = { STA: .16, CASTELO: .12, ONLINE: .09, SEM: .05 }[loja];
+      const r = rnd(); const idade = (now - criado) / DAY;
+      let status = 'open', fechado = null, motivo = null, etapa, valor = 0, ordem;
+      const ciclo = 1 + rnd() * rnd() * 20;
+      if (r < pWin && idade > ciclo) { status = 'won'; fechado = criado + ciclo * DAY; etapa = 'Venda ganha'; valor = Math.round(250 + rnd() * rnd() * 1800); }
+      else if (r < pWin + .62 && idade > 3) { status = 'lost'; fechado = criado + (2 + rnd() * 10) * DAY; if (fechado > now) fechado = now; etapa = 'Venda perdida'; motivo = pick(motivos, [40, 12, 9, 5, 4, 4]); }
+      else if (idade > 45) { status = 'lost'; fechado = criado + 30 * DAY; etapa = 'Venda perdida'; motivo = 'Parou de responder'; }
+      else { ordem = Math.min(etapas.length - 1, Math.floor(rnd() * rnd() * etapas.length + idade / 10)); etapa = etapas[ordem]; if (ordem >= 7) valor = Math.round(300 + rnd() * 1200); }
+      out.push({
+        id: id++, nome: `Cliente ${id}`, criado, fechado,
+        atualizado: status === 'open' ? criado + rnd() * Math.min(idade, 12) * DAY : fechado,
+        valor, status, etapa, etapaOrdem: ordem ?? 999, funil: 'Funil de vendas',
+        resp: pick(resps, [45, 35, 20]), origem: pick(origens, [70, 15, 10, 5]), loja, motivo,
+      });
+    }
+  }
+  return out;
+}
+
+/* =========================================================
+   Cálculos
+   ========================================================= */
+function rangeFor(preset) {
+  const now = new Date();
+  const thisW = sow(now);
+  switch (preset) {
+    case '4s': return [new Date(thisW.getTime() - 3 * 7 * DAY), eod(now)];
+    case '8s': return [new Date(thisW.getTime() - 7 * 7 * DAY), eod(now)];
+    case '12s': return [new Date(thisW.getTime() - 11 * 7 * DAY), eod(now)];
+    case 'mes': return [new Date(now.getFullYear(), now.getMonth(), 1), eod(now)];
+    case 'mesant': return [new Date(now.getFullYear(), now.getMonth() - 1, 1), eod(new Date(now.getFullYear(), now.getMonth(), 0))];
+    default: return [sod(state.from || thisW), eod(state.to || now)];
+  }
+}
+
+const inR = (t, a, b) => t != null && t >= a && t <= b;
+function metrics(leads, a, b) {
+  const created = leads.filter(l => inR(l.criado, a, b));
+  const won = leads.filter(l => l.status === 'won' && inR(l.fechado, a, b));
+  const lost = leads.filter(l => l.status === 'lost' && inR(l.fechado, a, b));
+  const fat = won.reduce((s, l) => s + l.valor, 0);
+  const safraWon = created.filter(l => l.status === 'won').length;
+  const ciclos = won.map(l => (l.fechado - l.criado) / DAY).filter(x => x >= 0);
+  return {
+    leads: created.length,
+    vendas: won.length,
+    fat,
+    ticket: won.length ? fat / won.length : null,
+    conv: created.length ? safraWon / created.length : null,
+    convPer: created.length ? won.length / created.length : null,
+    ciclo: ciclos.length ? ciclos.reduce((s, x) => s + x, 0) / ciclos.length : null,
+    perdidos: lost.length,
+    created, won, lost,
+  };
+}
+
+function weeksBetween(a, b) {
+  const out = []; let s = sow(new Date(a));
+  while (s.getTime() <= b) {
+    const e = eod(new Date(s.getTime() + 6 * DAY));
+    out.push({ start: s.getTime(), end: e.getTime(), label: `S${isoWeek(s)}`, range: `${ddmm(s)}–${ddmm(e)}` });
+    s = new Date(s.getTime() + 7 * DAY);
+  }
+  return out;
+}
+
+/* =========================================================
+   Renderização
+   ========================================================= */
+const charts = {};
+
+function filtered() {
+  return state.loja === 'all' ? state.leads : state.leads.filter(l => l.loja === state.loja);
+}
+
+function deltaHTML(cur, prev, { down = false, pp = false } = {}) {
+  if (cur == null || prev == null) return '<span class="delta flat">—</span>';
+  let diff, txt;
+  if (pp) { diff = cur - prev; txt = (diff >= 0 ? '+' : '') + (diff * 100).toFixed(1).replace('.', ',') + ' p.p.'; }
+  else {
+    if (prev === 0) return cur === 0 ? '<span class="delta flat">= 0%</span>' : '<span class="delta flat">novo</span>';
+    diff = (cur - prev) / prev; txt = (diff >= 0 ? '+' : '') + (diff * 100).toFixed(0) + '%';
+  }
+  if (Math.abs(diff) < 0.005) return `<span class="delta flat">= ${txt}</span>`;
+  const good = down ? diff < 0 : diff > 0;
+  return `<span class="delta ${good ? 'good' : 'bad'}" title="vs período anterior">${diff > 0 ? '▲' : '▼'} ${txt}</span>`;
+}
+
+function renderKPIs(cur, prev, all) {
+  const abertos = all.filter(l => l.status === 'open');
+  const valorAberto = abertos.reduce((s, l) => s + l.valor, 0);
+  const meta = parseFloat(cfg.meta);
+  const tiles = [
+    { l: 'Leads', v: nf0.format(cur.leads), d: deltaHTML(cur.leads, prev.leads), s: 'entraram no período' },
+    { l: 'Vendas', v: nf0.format(cur.vendas), d: deltaHTML(cur.vendas, prev.vendas), s: 'fechadas no período' },
+    { l: 'Faturamento', v: brl(cur.fat), d: deltaHTML(cur.fat, prev.fat), s: 'vendas ganhas no período' },
+    { l: 'Conversão (safra)', v: pct(cur.conv), d: deltaHTML(cur.conv, prev.conv, { pp: true }),
+      s: `vendas ÷ leads: ${pct(cur.convPer)}` + (meta ? ` · meta ${String(meta).replace('.', ',')}%` : '') },
+    { l: 'Ticket médio', v: cur.ticket == null ? '—' : brl(cur.ticket), d: deltaHTML(cur.ticket, prev.ticket), s: 'por venda' },
+    { l: 'Ciclo de venda', v: days(cur.ciclo), d: deltaHTML(cur.ciclo, prev.ciclo, { down: true }), s: 'do 1º contato ao fechamento' },
+    { l: 'Perdidos', v: nf0.format(cur.perdidos), d: deltaHTML(cur.perdidos, prev.perdidos, { down: true }), s: 'marcados como perdidos' },
+    { l: 'Em aberto agora', v: nf0.format(abertos.length), d: '', s: `${brl(valorAberto)} com valor no funil` },
+  ];
+  $('kpis').innerHTML = tiles.map(t => `
+    <div class="card kpi"><div class="lbl"><span>${t.l}</span>${t.d}</div>
+    <div class="val">${t.v}</div><div class="sub">${t.s}</div></div>`).join('');
+}
+
+function chartBase(money) {
+  const text2 = css('--text-2'), text3 = css('--text-3'), grid = css('--grid');
+  return {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: css('--surface-2'), titleColor: css('--text'), bodyColor: text2,
+        borderColor: css('--border'), borderWidth: 1, padding: 10, boxPadding: 4, usePointStyle: true,
+        callbacks: {},
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: text3, font: { size: 11 } }, border: { color: grid } },
+      y: { beginAtZero: true, grid: { color: grid }, border: { display: false },
+           ticks: { color: text3, font: { size: 11 }, precision: 0, callback: v => money ? brlK(v) : nf0.format(v) } },
+    },
+  };
+}
+
+function stackedBars(canvasId, weeks, lojasAtivas, valueFn, money) {
+  const surface = css('--surface');
+  const datasets = lojasAtivas.map(lj => ({
+    label: lj.label,
+    data: weeks.map(w => valueFn(w, lj.id)),
+    backgroundColor: css(lj.color),
+    borderColor: surface, borderWidth: { top: 2 }, borderSkipped: 'bottom',
+    borderRadius: 4, maxBarThickness: 34, stack: 's',
+  }));
+  const opt = chartBase(money);
+  opt.scales.x.stacked = true; opt.scales.y.stacked = true;
+  opt.plugins.tooltip.callbacks.title = items => { const w = weeks[items[0].dataIndex]; return `${w.label} · ${w.range}`; };
+  opt.plugins.tooltip.callbacks.label = c => ` ${c.dataset.label}: ${money ? brl(c.raw) : nf0.format(c.raw)}`;
+  opt.plugins.tooltip.callbacks.footer = items => 'Total: ' + (money ? brl(items.reduce((s, i) => s + i.raw, 0)) : nf0.format(items.reduce((s, i) => s + i.raw, 0)));
+  opt.plugins.tooltip.footerColor = css('--text');
+  charts[canvasId]?.destroy();
+  charts[canvasId] = new Chart($(canvasId), { type: 'bar', data: { labels: weeks.map(w => w.label), datasets }, options: opt });
+}
+
+function renderWeeks(leads, a, b, cicloRef) {
+  const weeks = weeksBetween(a, b);
+  const now = Date.now();
+  const maturacao = Math.max(7, Math.ceil(cicloRef || 7));
+  const lojasAtivas = state.loja === 'all' ? LOJAS.filter(lj => leads.some(l => l.loja === lj.id)) : LOJAS.filter(lj => lj.id === state.loja);
+  weeks.forEach(w => {
+    const e = Math.min(w.end, b);
+    w.m = metrics(leads, w.start, e);
+    w.maturando = (now - w.end) / DAY < maturacao;
+    w.parcial = w.end > now || w.start < a;
+  });
+
+  $('weekLegend').innerHTML = lojasAtivas.map(lj => `<span><i style="background:var(${lj.color})"></i>${lj.label}</span>`).join('');
+
+  const byLoja = (list, lj) => list.filter(l => l.loja === lj);
+  stackedBars('chLeads', weeks, lojasAtivas, (w, lj) => byLoja(w.m.created, lj).length, false);
+  stackedBars('chVendas', weeks, lojasAtivas, (w, lj) => byLoja(w.m.won, lj).length, false);
+  stackedBars('chFat', weeks, lojasAtivas, (w, lj) => byLoja(w.m.won, lj).reduce((s, l) => s + l.valor, 0), true);
+
+  // Conversão da safra (linha única, sem eixo duplo)
+  const accent = css('--accent'), surface = css('--surface');
+  const opt = chartBase(false);
+  opt.scales.y.ticks.callback = v => (v * 100).toFixed(0) + '%';
+  opt.scales.y.ticks.precision = undefined;
+  opt.plugins.tooltip.callbacks.title = items => { const w = weeks[items[0].dataIndex]; return `${w.label} · ${w.range}`; };
+  opt.plugins.tooltip.callbacks.label = c => {
+    const w = weeks[c.dataIndex];
+    if (c.dataset.label === 'Meta') return ` Meta: ${pct(c.raw)}`;
+    return ` ${pct(c.raw)} (${w.m.created.filter(l => l.status === 'won').length} de ${w.m.leads} leads)${w.maturando ? ' · em maturação' : ''}`;
+  };
+  const ds = [{
+    label: 'Conversão', data: weeks.map(w => w.m.conv),
+    borderColor: accent, backgroundColor: weeks.map(w => w.maturando ? surface : accent),
+    pointBorderColor: accent, pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+    borderWidth: 2, tension: 0, spanGaps: true,
+    segment: { borderDash: ctx => weeks[ctx.p1DataIndex]?.maturando ? [5, 4] : undefined },
+  }];
+  const meta = parseFloat(cfg.meta);
+  if (meta) ds.push({ label: 'Meta', data: weeks.map(() => meta / 100), borderColor: css('--text-3'), borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0 });
+  charts.chConv?.destroy();
+  charts.chConv = new Chart($('chConv'), { type: 'line', data: { labels: weeks.map(w => w.label), datasets: ds }, options: opt });
+
+  // Tabela semanal
+  let prev = null;
+  const rows = weeks.map(w => {
+    const m = w.m;
+    const dl = prev ? deltaHTML(m.leads, prev.leads) : '';
+    const dv = prev ? deltaHTML(m.vendas, prev.vendas) : '';
+    prev = m;
+    return `<tr>
+      <td><b>${w.label}</b> <span class="muted">${w.range}${w.parcial ? ' · parcial' : ''}</span></td>
+      <td>${nf0.format(m.leads)} ${dl}</td>
+      <td>${nf0.format(m.vendas)} ${dv}</td>
+      <td>${brl(m.fat)}</td>
+      <td>${m.ticket == null ? '—' : brl(m.ticket)}</td>
+      <td>${pct(m.conv)} ${w.maturando ? '<span class="matur" title="Leads desta semana ainda podem fechar">• maturando</span>' : ''}</td>
+      <td>${pct(m.convPer)}</td>
+      <td>${nf0.format(m.perdidos)}</td>
+    </tr>`;
+  }).reverse();
+  const T = metrics(leads, a, b);
+  $('tblWeeks').innerHTML = `<thead><tr><th>Semana</th><th>Leads</th><th>Vendas</th><th>Faturamento</th><th>Ticket</th><th>Conv. safra</th><th>Vendas ÷ leads</th><th>Perdidos</th></tr></thead>
+    <tbody>${rows.join('')}<tr class="total"><td>Total do período</td><td>${nf0.format(T.leads)}</td><td>${nf0.format(T.vendas)}</td><td>${brl(T.fat)}</td><td>${T.ticket == null ? '—' : brl(T.ticket)}</td><td>${pct(T.conv)}</td><td>${pct(T.convPer)}</td><td>${nf0.format(T.perdidos)}</td></tr></tbody>`;
+  return weeks;
+}
+
+function renderStores(a, b, pa, pb) {
+  const totalFat = metrics(state.leads, a, b).fat || 1;
+  $('storeCards').innerHTML = LOJAS.filter(lj => lj.id !== 'SEM' || state.leads.some(l => l.loja === 'SEM')).map(lj => {
+    const L = state.leads.filter(l => l.loja === lj.id);
+    const m = metrics(L, a, b), p = metrics(L, pa, pb);
+    return `<div class="card store-card" style="--sc:var(${lj.color})">
+      <div class="nm">${lj.label}<span>${pct(m.fat / totalFat)} do faturamento</span></div>
+      <div class="mini">
+        <div>Leads<b>${nf0.format(m.leads)}</b>${deltaHTML(m.leads, p.leads)}</div>
+        <div>Vendas<b>${nf0.format(m.vendas)}</b>${deltaHTML(m.vendas, p.vendas)}</div>
+        <div>Faturamento<b>${brl(m.fat)}</b>${deltaHTML(m.fat, p.fat)}</div>
+        <div>Conv. safra<b>${pct(m.conv)}</b>${deltaHTML(m.conv, p.conv, { pp: true })}</div>
+        <div>Ticket médio<b>${m.ticket == null ? '—' : brl(m.ticket)}</b></div>
+        <div>Ciclo<b>${days(m.ciclo)}</b></div>
+      </div></div>`;
+  }).join('');
+}
+
+function barsHTML(items, total, fmtV) {
+  if (!items.length) return '<div class="empty">Sem dados no período.</div>';
+  const max = Math.max(...items.map(i => i.v));
+  return items.map(i => `<div class="bar-row" title="${esc(i.k)}: ${i.v}">
+    <span class="nm">${esc(i.k)}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${(i.v / max * 100).toFixed(1)}%"></div></div>
+    <span class="v">${fmtV ? fmtV(i) : i.v} <small>${pct(i.v / total)}</small></span></div>`).join('');
+}
+function countBy(list, key) {
+  const m = new Map(); list.forEach(l => { const k = typeof key === 'function' ? key(l) : l[key]; m.set(k, (m.get(k) || 0) + 1); });
+  return [...m.entries()].map(([k, v]) => ({ k, v }));
+}
+
+function renderFunnelAndLoss(leads, cur) {
+  const abertos = leads.filter(l => l.status === 'open');
+  const ordem = new Map(); abertos.forEach(l => ordem.set(l.etapa, Math.min(ordem.get(l.etapa) ?? 999, l.etapaOrdem)));
+  const etapas = countBy(abertos, 'etapa').sort((x, y) => (ordem.get(x.k) - ordem.get(y.k)) || (y.v - x.v));
+  $('funilHint').textContent = `${abertos.length} leads em aberto (todas as datas) — onde eles estão parados`;
+  $('funil').innerHTML = barsHTML(etapas, abertos.length);
+
+  const motivos = countBy(cur.lost, 'motivo').sort((x, y) => y.v - x.v);
+  $('perdaHint').textContent = `${cur.lost.length} leads perdidos no período`;
+  $('perdas').innerHTML = barsHTML(motivos.slice(0, 8), cur.lost.length);
+}
+
+function groupTable(leads, a, b, key, title) {
+  const keys = [...new Set(leads.filter(l => inR(l.criado, a, b) || inR(l.fechado, a, b)).map(l => l[key]))];
+  const rows = keys.map(k => ({ k, m: metrics(leads.filter(l => l[key] === k), a, b) }))
+    .filter(r => r.m.leads || r.m.vendas)
+    .sort((x, y) => y.m.fat - x.m.fat || y.m.leads - x.m.leads);
+  if (!rows.length) return `<tbody><tr><td class="empty">Sem dados no período.</td></tr></tbody>`;
+  return `<thead><tr><th>${title}</th><th>Leads</th><th>Vendas</th><th>Conv. safra</th><th>Faturamento</th><th>Ticket</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${esc(r.k)}</td><td>${nf0.format(r.m.leads)}</td><td>${nf0.format(r.m.vendas)}</td><td>${pct(r.m.conv)}</td><td>${brl(r.m.fat)}</td><td>${r.m.ticket == null ? '—' : brl(r.m.ticket)}</td></tr>`).join('') + '</tbody>';
+}
+
+function renderParados(leads) {
+  const now = Date.now(); const lim = Number(cfg.diasParado) || 3;
+  const par = leads.filter(l => l.status === 'open')
+    .map(l => ({ ...l, dias: (now - (l.atualizado || l.criado)) / DAY }))
+    .filter(l => l.dias >= lim).sort((x, y) => y.dias - x.dias);
+  const semData = state.source === 'csv' && !leads.some(l => l.atualizado);
+  $('paradoHint').textContent = `em aberto sem movimentação há ${lim}+ dias · ${par.length} leads` + (semData ? ' (CSV sem coluna "Modificado em": usando data de criação)' : '');
+  if (!par.length) { $('tblParados').innerHTML = '<tbody><tr><td class="empty">Nenhum lead parado. 👏</td></tr></tbody>'; return par; }
+  const lj = id => LOJAS.find(x => x.id === id)?.label || id;
+  $('tblParados').innerHTML = `<thead><tr><th>Lead</th><th>Etapa</th><th>Loja</th><th>Responsável</th><th>Valor</th><th>Parado há</th></tr></thead><tbody>` +
+    par.slice(0, 20).map(l => `<tr>
+      <td>${cfg.sub && typeof l.id === 'number' ? `<a href="https://${esc(cfg.sub)}.kommo.com/leads/detail/${l.id}" target="_blank" rel="noopener">${esc(l.nome)}</a>` : esc(l.nome)}</td>
+      <td>${esc(l.etapa)}</td><td>${lj(l.loja)}</td><td>${esc(l.resp)}</td><td>${l.valor ? brl(l.valor) : '—'}</td><td><b>${Math.floor(l.dias)} dias</b></td></tr>`).join('') +
+    (par.length > 20 ? `<tr><td colspan="6" class="muted">+ ${par.length - 20} outros</td></tr>` : '') + '</tbody>';
+  return par;
+}
+
+function renderQuality(leads, a, b) {
+  const created = leads.filter(l => inR(l.criado, a, b));
+  const won = leads.filter(l => l.status === 'won' && inR(l.fechado, a, b));
+  const lost = leads.filter(l => l.status === 'lost' && inR(l.fechado, a, b));
+  const items = [
+    { t: 'Leads sem loja definida', n: created.filter(l => l.loja === 'SEM').length, d: created.length, why: `Sem o campo "${cfg.campoLoja}", o lead não entra na comparação por loja.` },
+    { t: 'Vendas sem valor', n: won.filter(l => !l.valor).length, d: won.length, why: 'Venda ganha com R$ 0 distorce faturamento e ticket.' },
+    { t: 'Leads sem origem', n: created.filter(l => l.origem === 'Não informado').length, d: created.length, why: 'Sem origem não dá para cruzar com as campanhas na fase 2.' },
+    { t: 'Perdas sem motivo', n: lost.filter(l => /sem motivo|geral/i.test(l.motivo || '')).length, d: lost.length, why: 'Motivo genérico esconde o que realmente trava a venda.' },
+  ];
+  $('quality').innerHTML = items.map(i => {
+    const r = i.d ? i.n / i.d : 0;
+    const cls = r > .2 ? 'bad' : r > .05 ? 'warn' : 'good';
+    const ic = cls === 'good' ? '✓' : '!';
+    return `<div class="ins ${cls}"><span class="ic">${ic}</span><div><b>${i.t}: ${i.n} de ${i.d} (${pct(r)})</b><br><span style="color:var(--text-3);font-size:12.5px">${i.why}</span></div></div>`;
+  }).join('');
+}
+
+function renderInsights(cur, prev, weeks, parados) {
+  const out = [];
+  const add = (cls, ic, html) => out.push(`<div class="ins ${cls}"><span class="ic">${ic}</span><div>${html}</div></div>`);
+
+  if (cur.conv != null && prev.conv != null) {
+    const d = (cur.conv - prev.conv) * 100;
+    if (Math.abs(d) >= 1) add(d > 0 ? 'good' : 'bad', d > 0 ? '▲' : '▼', `Conversão da safra ${d > 0 ? 'subiu' : 'caiu'} <b>${Math.abs(d).toFixed(1).replace('.', ',')} p.p.</b> vs período anterior (${pct(prev.conv)} → ${pct(cur.conv)}).`);
+  }
+  if (prev.leads && cur.leads && cur.vendas < prev.vendas && cur.leads >= prev.leads)
+    add('warn', '!', `Leads ${cur.leads > prev.leads ? 'cresceram' : 'se mantiveram'} mas vendas caíram (${prev.vendas} → ${cur.vendas}): o gargalo está no atendimento, não no volume.`);
+  if (prev.leads && cur.leads < prev.leads * 0.8)
+    add('warn', '!', `Entrada de leads caiu <b>${((1 - cur.leads / prev.leads) * 100).toFixed(0)}%</b> vs período anterior — vale olhar o tráfego.`);
+
+  if (state.loja === 'all') {
+    const st = LOJAS.filter(l => l.id !== 'SEM').map(lj => ({ lj, m: metrics(state.leads.filter(l => l.loja === lj.id), state.from.getTime(), state.to.getTime()) })).filter(x => x.m.leads >= 5);
+    if (st.length >= 2) {
+      st.sort((x, y) => y.m.conv - x.m.conv);
+      const best = st[0], worst = st[st.length - 1];
+      if (best.m.conv - worst.m.conv > 0.03) add('info', '◆', `<b>${best.lj.label}</b> converte ${pct(best.m.conv)} contra ${pct(worst.m.conv)} da <b>${worst.lj.label}</b>. Vale entender o que muda no atendimento.`);
+    }
+  }
+  const fullWeeks = weeks.filter(w => !w.parcial);
+  if (fullWeeks.length >= 2) {
+    const best = [...fullWeeks].sort((x, y) => y.m.fat - x.m.fat)[0];
+    if (best.m.fat > 0) add('good', '★', `Melhor semana: <b>${best.label} (${best.range})</b> com ${best.m.vendas} vendas e ${brl(best.m.fat)}.`);
+  }
+  const mot = countBy(cur.lost, 'motivo').sort((x, y) => y.v - x.v)[0];
+  if (mot && cur.lost.length >= 5) add('bad', '✕', `Principal motivo de perda: <b>${esc(mot.k)}</b> (${pct(mot.v / cur.lost.length)} das perdas).${/respond|conex/i.test(mot.k) ? ' Uma cadência de follow-up tende a recuperar parte disso.' : ''}`);
+  if (parados.length) {
+    const val = parados.reduce((s, l) => s + l.valor, 0);
+    add('warn', '⏱', `<b>${parados.length} leads parados</b> há ${cfg.diasParado}+ dias${val ? `, somando ${brl(val)} em propostas` : ''}. Veja a lista abaixo.`);
+  }
+  $('insights').innerHTML = out.length ? out.join('') : '<div class="empty">Sem destaques relevantes neste período.</div>';
+}
+
+function render() {
+  if (state.preset !== 'custom') { const [a, b] = rangeFor(state.preset); state.from = a; state.to = b; }
+  const a = sod(state.from).getTime(), b = eod(state.to).getTime();
+  const len = b - a + 1;
+  const pa = a - len, pb = a - 1;
+
+  $('periodNote').textContent = `${new Date(a).toLocaleDateString('pt-BR')} a ${new Date(b).toLocaleDateString('pt-BR')} · comparado com ${new Date(pa).toLocaleDateString('pt-BR')} a ${new Date(pb).toLocaleDateString('pt-BR')}`;
+  $('dFrom').value = toInput(new Date(a)); $('dTo').value = toInput(new Date(b));
+  document.querySelectorAll('#presets .chip').forEach(c => c.classList.toggle('on', c.dataset.p === state.preset));
+  $('customRange').classList.toggle('on', state.preset === 'custom');
+  renderLojaChips();
+
+  const leads = filtered();
+  const cur = metrics(leads, a, b), prev = metrics(leads, pa, pb);
+  renderKPIs(cur, prev, leads);
+  const weeks = renderWeeks(leads, a, b, cur.ciclo);
+  renderStores(a, b, pa, pb);
+  renderFunnelAndLoss(leads, cur);
+  $('tblResp').innerHTML = groupTable(leads, a, b, 'resp', 'Responsável');
+  $('tblOrigem').innerHTML = groupTable(leads, a, b, 'origem', 'Origem');
+  const parados = renderParados(leads);
+  renderQuality(leads, a, b);
+  renderInsights(cur, prev, weeks, parados);
+}
+
+function renderLojaChips() {
+  const present = LOJAS.filter(lj => state.leads.some(l => l.loja === lj.id));
+  $('lojaFilter').innerHTML = '<span class="flabel">Loja</span>' +
+    `<button class="chip ${state.loja === 'all' ? 'on' : ''}" data-l="all">Todas</button>` +
+    present.map(lj => `<button class="chip ${state.loja === lj.id ? 'on' : ''}" data-l="${lj.id}"><span class="sw" style="background:var(${lj.color})"></span>${lj.label}</button>`).join('');
+}
+
+function setSource(src, extra = '') {
+  state.source = src;
+  const dot = $('srcDot'); dot.className = 'dot ' + src;
+  const n = nf0.format(state.leads.length);
+  $('srcTxt').textContent = {
+    live: `Kommo ao vivo · ${n} leads · atualizado ${state.updatedAt ? new Date(state.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}`,
+    csv: `CSV importado do Kommo · ${n} leads`,
+    demo: `Dados de demonstração — conecte o Kommo ou importe um CSV`,
+  }[src] + extra;
+  $('btnCfg').textContent = src === 'live' ? 'Configurações' : 'Conectar Kommo';
+}
+
+/* =========================================================
+   Carregamento
+   ========================================================= */
+async function load() {
+  if (cfg.webhook) {
+    $('srcTxt').textContent = 'Buscando dados no Kommo…';
+    try {
+      state.leads = await loadLive();
+      state.updatedAt = Date.now();
+      setSource('live');
+      render();
+      return;
+    } catch (e) {
+      toast('Não foi possível buscar do Kommo: ' + e.message, 6000);
+    }
+  }
+  const cached = lsGet(DATA_KEY);
+  if (cached?.leads?.length) { state.leads = cached.leads; setSource('csv', cfg.webhook ? ' (Kommo indisponível)' : ''); }
+  else { state.leads = demoLeads(); setSource('demo'); }
+  render();
+}
+
+/* =========================================================
+   Eventos
+   ========================================================= */
+$('presets').addEventListener('click', e => {
+  const p = e.target.closest('.chip')?.dataset.p; if (!p) return;
+  state.preset = p; render();
+});
+$('dFrom').addEventListener('change', e => { state.preset = 'custom'; state.from = new Date(e.target.value + 'T00:00'); render(); });
+$('dTo').addEventListener('change', e => { state.preset = 'custom'; state.to = new Date(e.target.value + 'T00:00'); render(); });
+$('lojaFilter').addEventListener('click', e => {
+  const l = e.target.closest('.chip')?.dataset.l; if (!l) return;
+  state.loja = l; render();
+});
+$('btnRefresh').addEventListener('click', load);
+$('btnImport').addEventListener('click', () => $('fileCsv').click());
+$('fileCsv').addEventListener('change', async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  try {
+    const prev = state.source === 'csv' ? state.leads : [];
+    const map = new Map(prev.map(l => [l.id, l]));
+    let n = 0;
+    for (const f of files) { const ls = leadsFromCSV(await f.text()); ls.forEach(l => map.set(l.id, l)); n += ls.length; }
+    state.leads = [...map.values()];
+    const ok = lsSet(DATA_KEY, { leads: state.leads, at: Date.now() });
+    setSource('csv');
+    render();
+    toast(`${n} leads importados (${state.leads.length} no total)${ok ? '' : ' — arquivo grande demais para salvar no navegador'}`);
+  } catch (err) { toast('Erro ao ler CSV: ' + err.message, 6000); }
+  e.target.value = '';
+});
+
+function openCfg() {
+  $('cWebhook').value = cfg.webhook; $('cKey').value = cfg.key; $('cSub').value = cfg.sub;
+  $('cCampoLoja').value = cfg.campoLoja; $('cCampoOrigem').value = cfg.campoOrigem;
+  $('cDias').value = cfg.diasParado; $('cMeta').value = cfg.meta;
+  $('cfgModal').classList.add('on');
+}
+$('btnCfg').addEventListener('click', openCfg);
+$('cCancel').addEventListener('click', () => $('cfgModal').classList.remove('on'));
+$('cfgModal').addEventListener('click', e => { if (e.target.id === 'cfgModal') $('cfgModal').classList.remove('on'); });
+$('cSave').addEventListener('click', () => {
+  Object.assign(cfg, {
+    webhook: $('cWebhook').value.trim(), key: $('cKey').value.trim(), sub: $('cSub').value.trim().replace(/\.kommo\.com.*$/, '').replace(/^https?:\/\//, ''),
+    campoLoja: $('cCampoLoja').value.trim() || 'Loja Visitada', campoOrigem: $('cCampoOrigem').value.trim() || 'Origem do contato',
+    diasParado: Number($('cDias').value) || 3, meta: $('cMeta').value.trim(),
+  });
+  lsSet(CFG_KEY, cfg);
+  $('cfgModal').classList.remove('on');
+  load();
+});
+$('cDemo').addEventListener('click', () => {
+  cfg.webhook = ''; lsSet(CFG_KEY, cfg);
+  try { localStorage.removeItem(DATA_KEY); } catch {}
+  state.leads = demoLeads(); setSource('demo');
+  $('cfgModal').classList.remove('on'); render();
+});
+
+function applyTheme() {
+  if (cfg.theme) document.documentElement.setAttribute('data-theme', cfg.theme);
+  else document.documentElement.removeAttribute('data-theme');
+}
+$('btnTheme').addEventListener('click', () => {
+  const isDark = css('--bg') === '#111110';
+  cfg.theme = isDark ? 'light' : 'dark'; lsSet(CFG_KEY, cfg); applyTheme(); render();
+});
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (!cfg.theme) render(); });
+
+applyTheme();
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+{
+  "name": "GM Store · Kommo → Dashboard Comercial",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "gm-comercial",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "gm-comercial"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Kommo → Dashboard Comercial GM Store\"\n// Modo: Run Once for All Items\n//\n// Variáveis de ambiente do n8n (recomendado):\n//   KOMMO_SUBDOMAIN  ex.: gmstore            (de gmstore.kommo.com)\n//   KOMMO_TOKEN      token de longa duração da integração privada do Kommo\n//   GMC_KEY          chave simples que o dashboard envia em ?key=\n// Se o seu n8n bloqueia $env (n8n Cloud / N8N_BLOCK_ENV_ACCESS_IN_NODE=true),\n// preencha os valores direto abaixo — eles ficam só no servidor do n8n, nunca no HTML.\n\nconst SUB = $env.KOMMO_SUBDOMAIN || 'PREENCHER';\nconst TOKEN = $env.KOMMO_TOKEN || 'PREENCHER';\nconst KEY = $env.GMC_KEY || '';\n\nconst query = $input.first().json.query || {};\nif (KEY && query.key !== KEY) {\n  return [{ json: { error: 'Chave de acesso inválida' } }];\n}\n\nconst http = this.helpers;\nconst BASE = `https://${SUB}.kommo.com/api/v4`;\nconst sleep = ms => new Promise(r => setTimeout(r, ms));\n\nasync function get(path) {\n  const res = await http.httpRequest({\n    method: 'GET',\n    url: BASE + path,\n    headers: { Authorization: `Bearer ${TOKEN}` },\n    json: true,\n  });\n  return res || null; // Kommo responde 204 (vazio) quando não há resultados\n}\n\nasync function allLeads(filter) {\n  const out = [];\n  for (let page = 1; page <= 200; page++) {\n    const r = await get(`/leads?limit=250&page=${page}&with=loss_reason&${filter}`);\n    const arr = r?._embedded?.leads || [];\n    out.push(...arr);\n    if (arr.length < 250) break;\n    await sleep(150); // limite do Kommo: 7 req/s\n  }\n  return out;\n}\n\nconst from = parseInt(query.from) || Math.floor(Date.now() / 1000) - 400 * 86400;\nconst f = (field) => `${encodeURIComponent(`filter[${field}][from]`)}=${from}`;\n\n// Leads criados no período + leads fechados no período (podem ter sido criados antes)\nconst [criados, fechados] = [await allLeads(f('created_at')), await allLeads(f('closed_at'))];\nconst byId = new Map();\n[...criados, ...fechados].forEach(l => byId.set(l.id, l));\n\n// Dicionários: etapas, funis, usuários, motivos de perda\nconst pipesRes = await get('/leads/pipelines');\nconst statusMap = {};\nconst pipeName = {};\nfor (const p of pipesRes?._embedded?.pipelines || []) {\n  pipeName[p.id] = p.name;\n  for (const s of p._embedded?.statuses || []) statusMap[`${p.id}:${s.id}`] = { name: s.name, sort: s.sort };\n}\nconst usersRes = await get('/users?limit=250');\nconst userName = {};\nfor (const u of usersRes?._embedded?.users || []) userName[u.id] = u.name;\nlet lossName = {};\ntry {\n  const lr = await get('/leads/loss_reasons');\n  for (const r of lr?._embedded?.loss_reasons || []) lossName[r.id] = r.name;\n} catch (e) { /* conta sem motivos de perda configurados */ }\n\nconst leads = [...byId.values()].map(l => {\n  const campos = {};\n  for (const cf of l.custom_fields_values || []) {\n    campos[cf.field_name] = (cf.values || []).map(v => v.value ?? v.enum_code ?? '').filter(Boolean).join(', ');\n  }\n  const status = l.status_id === 142 ? 'won' : l.status_id === 143 ? 'lost' : 'open';\n  const st = statusMap[`${l.pipeline_id}:${l.status_id}`] || {};\n  return {\n    id: l.id,\n    nome: l.name,\n    valor: l.price || 0,\n    criado: l.created_at,\n    fechado: l.closed_at || null,\n    atualizado: l.updated_at,\n    status,\n    etapa: st.name || (status === 'won' ? 'Venda ganha' : status === 'lost' ? 'Venda perdida' : '—'),\n    etapaOrdem: st.sort ?? 999,\n    funil: pipeName[l.pipeline_id] || '',\n    resp: userName[l.responsible_user_id] || 'Sem responsável',\n    campos,\n    tags: (l._embedded?.tags || []).map(t => t.name),\n    motivo: status === 'lost'\n      ? (l._embedded?.loss_reason?.[0]?.name || lossName[l.loss_reason_id] || 'Sem motivo informado')\n      : null,\n  };\n});\n\nreturn [{ json: { subdomain: SUB, geradoEm: new Date().toISOString(), total: leads.length, leads } }];\n"
+      },
+      "id": "a2",
+      "name": "Kommo → leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a3",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Kommo → leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kommo → leads": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
