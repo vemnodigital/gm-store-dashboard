@@ -898,6 +898,11 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
         <div class="card c-green"><div class="lbl">Conversas WhatsApp</div><div class="val" id="c-conv">—</div><div class="sub" id="c-conv-sub">Todas as lojas</div></div>
         <div class="card"><div class="lbl">CPM Médio</div><div class="val" id="c-cpm">—</div><div class="sub">Por mil impressões</div></div>
         <div class="card c-green"><div class="lbl">Custo / Conversa</div><div class="val" id="c-cpc">—</div><div class="sub">Média geral</div></div>
+      </div>
+
+      <!-- CARDS COMERCIAIS (vendas) -->
+      <div class="section-title" id="lbl-comercial">Comercial — Visão Geral</div>
+      <div class="cards-grid">
         <div class="card" id="card-fat-online"><div class="lbl">Faturamento Total</div><div class="val" id="c-fat-online">—</div><div class="sub" id="c-fat-online-sub">STA + Castelo + Entrega</div></div>
         <div class="card" id="card-vendas-loja"><div class="lbl">Vendas Fechadas</div><div class="val" id="c-vendas-total">—</div><div class="sub" id="c-vendas-sub">STA · Castelo · Entrega</div></div>
         <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub" id="c-cpv-sub">Investido ÷ total vendas</div></div>
@@ -1922,6 +1927,7 @@ function setLoja(l) {
   document.getElementById('btn-cas').className = 'store-btn' + (l==='castelo'?' a-cas':'');
   document.getElementById('c-conv-sub').textContent = l==='all'?'Todas as lojas':l==='sta'?'Loja STA':'Loja Castelo';
   document.getElementById('lbl-geral').textContent = l==='all'?'Meta Ads — Visão Geral':l==='sta'?'Meta Ads — Loja STA':'Meta Ads — Loja Castelo';
+  document.getElementById('lbl-comercial').textContent = l==='all'?'Comercial — Visão Geral':l==='sta'?'Comercial — Loja STA':'Comercial — Loja Castelo';
   if (dadosCamp.length > 0) {
     const ini = document.getElementById('date-start').value;
     const fim = document.getElementById('date-end').value;
