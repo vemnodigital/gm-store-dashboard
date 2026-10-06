@@ -8,11 +8,17 @@ Uso:
 Sem token: escreve gmstore_dashboard_cliente.html + index.html (versões do repo, sem credencial).
 Com token: escreve só hostinger/index.html + hostinger/gmstore_dados.js — pasta fora do git,
 para o token nunca ir ao GitHub (repo público).
+Com GM_SENHA também (só junto com token): cliente abre SEM senha — a chave já derivada vai
+embutida no HTML (a senha em si não aparece). Quem tiver o link vê as vendas.
 
 O admin (gmstore_dashboard_live.html) é a fonte única — nunca edite o cliente à mão.
 O cliente lê as vendas de gmstore_dados.js (botão "⬇ Dados cliente" no admin).
 """
+import base64
+import hashlib
+import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -43,6 +49,12 @@ if token and conta:
     SAIDAS = [pasta / 'index.html']
     shutil.copy(DIR / 'gmstore_dados.js', pasta / 'gmstore_dados.js')
     print('Token fixo embutido — versão Hostinger em hostinger/ (fora do git).')
+    senha = os.environ.get('GM_SENHA', '')
+    if senha:
+        pacote = json.loads(re.search(r'GM_DADOS_CRIPTO = (\{.*?\});', (DIR / 'gmstore_dados.js').read_text(encoding='utf-8')).group(1))
+        chave = hashlib.pbkdf2_hmac('sha256', senha.encode(), base64.b64decode(pacote['salt']), pacote['iter'], 32)
+        html = trocar(html, "const CHAVE_CLIENTE    = '';", f"const CHAVE_CLIENTE    = '{base64.b64encode(chave).decode()}';")
+        print('Cliente sem senha (chave embutida).')
     print('Gerado: hostinger/gmstore_dados.js')
 
 for saida in SAIDAS:

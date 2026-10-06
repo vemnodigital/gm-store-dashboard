@@ -898,7 +898,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()">☀ Claro</button>
       <button class="btn-settings so-admin" onclick="exportarDadosCliente()" title="Baixa gmstore_dados.js cifrado com as vendas — suba no GitHub no lugar do anterior">⬇ Dados cliente</button>
       <button class="btn-settings so-admin" onclick="abrirConfig()">⚙ Config</button>
-      <button class="btn-settings" onclick="sairLogin()" title="Sair e esquecer a senha neste navegador">⎋ Sair</button>
+      <button class="btn-settings" id="btn-sair" onclick="sairLogin()" title="Sair e esquecer a senha neste navegador">⎋ Sair</button>
     </div>
   </header>
 
@@ -1192,6 +1192,8 @@ const FIXED_TOKEN      = '';          // ex: 'EAAxxxxxxxxxxxxxxxx'
 const FIXED_ACCOUNT    = '';          // ex: 'act_1234567890'
 const FIXED_KW_STA     = 'STA';
 const FIXED_KW_CASTELO = 'CASTELO';
+// Cliente sem senha: chave AES já derivada (preenchida só pelo gerar_cliente.py na build da Hostinger)
+const CHAVE_CLIENTE    = '';
 // A senha NÃO fica no código: ela é a chave que decifra gmstore_dados.js (ver CRIPTOGRAFIA)
 // 'admin' = este arquivo (config/vendas/análise)
 // 'cliente' = gmstore_dashboard_cliente.html, gerado por gerar_cliente.py — não editar o cliente à mão
@@ -1369,6 +1371,20 @@ async function carregarConfig() {
   const logoSrc = document.querySelector('#dashboard .logo-area img');
   if (logoSrc) document.getElementById('login-logo').src = logoSrc.src;
 
+  // Cliente sem senha (build Hostinger): decifra direto com a chave embutida
+  if (EH_CLIENTE && CHAVE_CLIENTE && window.GM_DADOS_CRIPTO) {
+    try {
+      const btnSair = document.getElementById('btn-sair');
+      if (btnSair) btnSair.style.display = 'none';
+      const pacote = window.GM_DADOS_CRIPTO;
+      const key = await crypto.subtle.importKey('raw', deB64(CHAVE_CLIENTE), { name: 'AES-GCM' }, false, ['decrypt']);
+      await desbloquear({ key, salt: pacote.salt, iter: pacote.iter });
+      return;
+    } catch (e) {
+      console.error('Chave do cliente não abre gmstore_dados.js — regenere a build com gerar_cliente.py', e);
+    }
+  }
+
   // Login lembrado neste navegador pula a tela de senha (vale até a senha mudar)
   try {
     const salvo = JSON.parse(localStorage.getItem(CHAVE_KEY) || 'null');
@@ -1422,7 +1438,9 @@ function fmtBr(s) { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
 
 function setPreset(p) {
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  event && event.target && event.target.classList.add('active');
+  // window.event também existe no carregamento automático (target = document): só marca se veio de um botão
+  const alvo = window.event && window.event.target;
+  if (alvo && alvo.classList && alvo.classList.contains('preset-btn')) alvo.classList.add('active');
   const hoje = new Date();
   let ini, fim;
   if (p === '7d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-6); }
