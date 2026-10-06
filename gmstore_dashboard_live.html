@@ -536,6 +536,31 @@ body.theme-light .txt-area{background:#f8fafc;border-color:#e2e8f0;color:#0f172a
 body.theme-light .txt-area:focus{border-color:#2563eb;}
 body.theme-light .txt-area::placeholder{color:#94a3b8;}
 
+/* Editor rico por mês */
+.analise-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.analise-bar label{font-size:12px;color:#94a3b8;font-weight:600;}
+.analise-mes-sel{background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;color:#e2e8f0;font-family:inherit;cursor:pointer;outline:none;}
+.btn-salvar-analise{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #2f9e44;background:#2f9e44;color:#fff;font-family:inherit;transition:opacity 0.2s;}
+.btn-salvar-analise:disabled{opacity:0.45;cursor:default;}
+.analise-status{font-size:12px;color:#94a3b8;}
+.analise-status.pendente{color:#f59f00;font-weight:600;}
+.txt-toolbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.tb-btn{min-width:30px;height:28px;padding:0 8px;border-radius:6px;border:1px solid #2d3148;background:#12151e;color:#cbd5e1;font-size:13px;cursor:pointer;font-family:inherit;line-height:1;}
+.tb-btn:hover{border-color:#748ffc;color:#748ffc;}
+.tb-btn.on{border-color:#748ffc;background:#1e2a4a;color:#748ffc;}
+.tb-sel{height:28px;border-radius:6px;border:1px solid #2d3148;background:#12151e;color:#cbd5e1;font-size:12px;font-family:inherit;padding:0 6px;cursor:pointer;outline:none;}
+.tb-sep{width:1px;height:18px;background:#2d3148;margin:0 4px;}
+.txt-editor{min-height:160px;overflow-wrap:anywhere;}
+.txt-editor:empty::before{content:attr(data-placeholder);color:#64748b;pointer-events:none;}
+.txt-editor ul,.txt-editor ol{padding-left:22px;margin:4px 0;}
+.txt-editor p,.txt-editor div{margin:0;}
+body.theme-light .analise-mes-sel{background:#fff;border-color:#e2e8f0;color:#0f172a;}
+body.theme-light .tb-btn,body.theme-light .tb-sel{background:#fff;border-color:#e2e8f0;color:#334155;}
+body.theme-light .tb-btn:hover{border-color:#2563eb;color:#2563eb;}
+body.theme-light .tb-btn.on{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+body.theme-light .tb-sep{background:#e2e8f0;}
+body.theme-light .txt-editor:empty::before{color:#94a3b8;}
+
 /* ── PRINT / PDF ───────────────────────────────── */
 @media print {
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
@@ -628,6 +653,7 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
   .txt-box-inner{background:#f8fafc!important;border-color:#e2e8f0!important;box-shadow:none!important;}
   .txt-lbl{color:#475569!important;}
   .txt-area{background:#fff!important;border-color:#e2e8f0!important;color:#0f172a!important;}
+  .analise-bar,.txt-toolbar{display:none!important;}
 
   /* Quebra de página */
   .funnel-wrapper,.store-card,.table-box,.charts-row,.cards-grid,.mom-card{break-inside:avoid;}
@@ -1011,15 +1037,23 @@ body.theme-light .txt-area::placeholder{color:#94a3b8;}
 
       <!-- ANÁLISE & PLANO DE AÇÃO (opcional — aparece no PDF quando ativo) -->
       <div id="section-analise-texto" style="display:none;margin-top:28px;">
-        <div class="section-title">Análise do Mês & Plano de Ação</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="section-title" id="lbl-analise-mes">Análise do Mês & Plano de Ação</div>
+        <div class="analise-bar">
+          <label for="analise-mes">Mês</label>
+          <select id="analise-mes" class="analise-mes-sel" onchange="trocarMesAnalise(this.value)"></select>
+          <button class="btn-salvar-analise" id="btn-salvar-analise" onclick="salvarTextos()" disabled>💾 Salvar</button>
+          <span class="analise-status" id="analise-status"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
           <div class="txt-box-inner">
             <span class="txt-lbl">Análise do Mês</span>
-            <textarea id="txt-analise" class="txt-area" placeholder="Escreva aqui sua análise do período — destaques, oportunidades, pontos de atenção..." oninput="salvarTextos()"></textarea>
+            <div class="txt-toolbar" data-alvo="txt-analise"></div>
+            <div id="txt-analise" class="txt-area txt-editor" contenteditable="true" data-placeholder="Escreva aqui sua análise do período — destaques, oportunidades, pontos de atenção..."></div>
           </div>
           <div class="txt-box-inner">
             <span class="txt-lbl">Plano de Ação</span>
-            <textarea id="txt-plano" class="txt-area" placeholder="Descreva os próximos passos, otimizações e estratégias para o próximo mês..." oninput="salvarTextos()"></textarea>
+            <div class="txt-toolbar" data-alvo="txt-plano"></div>
+            <div id="txt-plano" class="txt-area txt-editor" contenteditable="true" data-placeholder="Descreva os próximos passos, otimizações e estratégias para o próximo mês..."></div>
           </div>
         </div>
       </div>
@@ -1527,6 +1561,7 @@ async function buscarDadosAnalise() {
 
 // ─── RENDER ───────────────────────────────────────
 function renderDashboard(ini, fim) {
+  sincronizarMesAnalise(ini);
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('content').classList.remove('hidden');
   document.getElementById('header-period').textContent = `${fmtBr(ini)} → ${fmtBr(fim)}`;
@@ -2926,25 +2961,183 @@ function toggleAnalise() {
   }
 }
 
+// Textos por mês: gmstore_analises = { 'AAAA-MM': { analise, plano, salvoEm } } (HTML do editor)
+const ANALISES_KEY = 'gmstore_analises';
+let mesAnalise = null;
+let analiseAlterada = false;
+
+function lerAnalises() {
+  try { return JSON.parse(localStorage.getItem(ANALISES_KEY) || '{}'); } catch (e) { return {}; }
+}
+
+function mesDe(dataISO) { return (dataISO || '').slice(0, 7); }
+
+function nomeMesAnalise(mes) {
+  const [y, m] = mes.split('-').map(Number);
+  return `${MESES_EXTENSO[m-1]}/${y}${mes.endsWith('-antigo') ? ' (texto anterior)' : ''}`;
+}
+
+// Versão antiga guardava um texto só: vai para o mês anterior (análise é escrita sobre o mês fechado)
+// As chaves antigas NÃO são apagadas — ficam como backup; a flag evita migrar duas vezes
+function migrarTextosAntigos() {
+  if (localStorage.getItem('gmstore_analises_migrado')) return;
+  const a = localStorage.getItem('gmstore_txt_analise') || '';
+  const p = localStorage.getItem('gmstore_txt_plano') || '';
+  if (!a.trim() && !p.trim()) return;
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1);
+  let mes = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const todas = lerAnalises();
+  if (todas[mes]) mes = mes + '-antigo';  // nunca sobrescreve um mês que já tem texto
+  const txtParaHtml = t => t.split('\n').map(l => `<div>${escHtml(l) || '<br>'}</div>`).join('');
+  todas[mes] = { analise: txtParaHtml(a), plano: txtParaHtml(p), salvoEm: new Date().toISOString() };
+  localStorage.setItem(ANALISES_KEY, JSON.stringify(todas));
+  localStorage.setItem('gmstore_analises_migrado', '1');
+}
+
+function escHtml(t) {
+  return t.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+
+function editorVazio(el) { return !el.textContent.trim() && !el.querySelector('li'); }
+
+function montarToolbars() {
+  document.querySelectorAll('.txt-toolbar').forEach(tb => {
+    tb.innerHTML = `
+      <button type="button" class="tb-btn" data-cmd="bold" title="Negrito (Ctrl+B)"><b>B</b></button>
+      <button type="button" class="tb-btn" data-cmd="italic" title="Itálico (Ctrl+I)"><i>I</i></button>
+      <span class="tb-sep"></span>
+      <button type="button" class="tb-btn" data-cmd="insertUnorderedList" title="Lista com marcadores">• Itens</button>
+      <button type="button" class="tb-btn" data-cmd="insertOrderedList" title="Lista numerada">1. Numerar</button>
+      <span class="tb-sep"></span>
+      <select class="tb-sel" title="Tamanho da fonte">
+        <option value="">Tamanho</option>
+        <option value="2">Pequeno</option>
+        <option value="3">Normal</option>
+        <option value="4">Médio</option>
+        <option value="5">Grande</option>
+        <option value="6">Título</option>
+      </select>`;
+    const ed = document.getElementById(tb.dataset.alvo);
+    // mousedown + preventDefault mantém a seleção dentro do editor
+    tb.querySelectorAll('.tb-btn').forEach(b => b.addEventListener('mousedown', e => {
+      e.preventDefault();
+      ed.focus();
+      document.execCommand(b.dataset.cmd, false, null);
+      marcarAlterada();
+      atualizarBotoesToolbar();
+    }));
+    const sel = tb.querySelector('.tb-sel');
+    sel.addEventListener('change', () => {
+      if (!sel.value) return;
+      ed.focus();
+      document.execCommand('fontSize', false, sel.value);
+      sel.value = '';
+      marcarAlterada();
+    });
+  });
+  document.querySelectorAll('.txt-editor').forEach(ed => {
+    ed.addEventListener('input', marcarAlterada);
+    // Colar como texto puro (evita trazer cores/fontes de WhatsApp, Docs etc.)
+    ed.addEventListener('paste', e => {
+      e.preventDefault();
+      document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+    });
+    ed.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); salvarTextos(); }
+    });
+  });
+  document.addEventListener('selectionchange', atualizarBotoesToolbar);
+  window.addEventListener('beforeunload', e => { if (analiseAlterada) { e.preventDefault(); e.returnValue = ''; } });
+}
+
+function atualizarBotoesToolbar() {
+  document.querySelectorAll('.txt-toolbar .tb-btn').forEach(b => {
+    let on = false;
+    try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {}
+    b.classList.toggle('on', on);
+  });
+}
+
+function marcarAlterada() {
+  analiseAlterada = true;
+  atualizarStatusAnalise();
+}
+
+function atualizarStatusAnalise() {
+  const st = document.getElementById('analise-status');
+  const btn = document.getElementById('btn-salvar-analise');
+  if (!st || !btn) return;
+  btn.disabled = !analiseAlterada;
+  if (analiseAlterada) { st.textContent = '● Alterações não salvas'; st.className = 'analise-status pendente'; return; }
+  const reg = lerAnalises()[mesAnalise];
+  st.className = 'analise-status';
+  st.textContent = reg && reg.salvoEm
+    ? `✓ Salvo em ${new Date(reg.salvoEm).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}`
+    : 'Nada salvo para este mês';
+}
+
+function preencherSelectMeses() {
+  const sel = document.getElementById('analise-mes');
+  if (!sel) return;
+  const todas = lerAnalises();
+  const extras = Object.keys(todas).filter(m => !MESES_PT[m]);  // ex.: backup '2026-09-antigo'
+  sel.innerHTML = [...Object.keys(MESES_PT).reverse(), ...extras].map(m =>
+    `<option value="${m}">${nomeMesAnalise(m)}${todas[m] ? ' ✓' : ''}</option>`).join('');
+  sel.value = mesAnalise;
+}
+
+function mostrarMesAnalise(mes) {
+  mesAnalise = mes;
+  const reg = lerAnalises()[mes] || {};
+  document.getElementById('txt-analise').innerHTML = reg.analise || '';
+  document.getElementById('txt-plano').innerHTML = reg.plano || '';
+  document.getElementById('lbl-analise-mes').textContent = `Análise do Mês & Plano de Ação — ${nomeMesAnalise(mes)}`;
+  analiseAlterada = false;
+  preencherSelectMeses();
+  atualizarStatusAnalise();
+}
+
+function trocarMesAnalise(mes) {
+  if (mes === mesAnalise) return;
+  if (analiseAlterada && !confirm(`Há alterações não salvas em ${nomeMesAnalise(mesAnalise)}. Trocar de mês e descartar?`)) {
+    document.getElementById('analise-mes').value = mesAnalise;
+    return;
+  }
+  mostrarMesAnalise(mes);
+}
+
+// Chamado ao buscar dados: a caixa acompanha o mês do início do período (sem perder alterações)
+function sincronizarMesAnalise(ini) {
+  const mes = mesDe(ini);
+  if (!MESES_PT[mes] || mes === mesAnalise || analiseAlterada) return;
+  mostrarMesAnalise(mes);
+}
+
 function salvarTextos() {
+  if (!mesAnalise) return;
   const a = document.getElementById('txt-analise');
   const p = document.getElementById('txt-plano');
-  if (a) localStorage.setItem('gmstore_txt_analise', a.value);
-  if (p) localStorage.setItem('gmstore_txt_plano', p.value);
+  const todas = lerAnalises();
+  if (editorVazio(a) && editorVazio(p)) delete todas[mesAnalise];
+  else todas[mesAnalise] = { analise: a.innerHTML, plano: p.innerHTML, salvoEm: new Date().toISOString() };
+  localStorage.setItem(ANALISES_KEY, JSON.stringify(todas));
+  analiseAlterada = false;
+  preencherSelectMeses();
+  atualizarStatusAnalise();
 }
 
 function carregarTextos() {
-  const a = localStorage.getItem('gmstore_txt_analise') || '';
-  const p = localStorage.getItem('gmstore_txt_plano') || '';
-  const el_a = document.getElementById('txt-analise');
-  const el_p = document.getElementById('txt-plano');
-  if (el_a) el_a.value = a;
-  if (el_p) el_p.value = p;
+  if (!document.getElementById('txt-analise')) return;
+  migrarTextosAntigos();
+  montarToolbars();
+  const ini = document.getElementById('date-start') && document.getElementById('date-start').value;
+  const hoje = new Date();
+  const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+  mostrarMesAnalise(MESES_PT[mesDe(ini)] ? mesDe(ini) : mesAtual);
   const vis = localStorage.getItem('gmstore_analise_vis') === '1';
-  const temConteudo = a.trim() || p.trim();
   const sec = document.getElementById('section-analise-texto');
   const btn = document.getElementById('btn-toggle-analise');
-  if (sec && btn && (vis || temConteudo)) {
+  if (sec && btn && (vis || Object.keys(lerAnalises()).length)) {
     sec.style.display = 'block';
     btn.classList.add('ativo');
     btn.textContent = '✏️ Ocultar';
