@@ -1204,7 +1204,12 @@ const EH_CLIENTE = MODO === 'cliente';
 // gmstore_dados.js é publicado cifrado (AES-GCM 256, chave derivada da senha via PBKDF2-SHA256).
 // Senha certa decifra o arquivo e abre o painel; senha errada falha na decifragem.
 const CRIPTO_ITER = 600000;
-const CHAVE_KEY = 'gmstore_chave'; // "Manter conectado": chave derivada (nunca a senha) neste navegador
+// "Manter conectado": chave derivada (nunca a senha) neste navegador — chave separada por modo,
+// para um login de cliente no mesmo domínio não abrir o admin
+const CHAVE_KEY = EH_CLIENTE ? 'gmstore_chave' : 'gmstore_chave_admin';
+// Senha própria do admin: k = chave dos dados XOR PBKDF2(senha admin, salt). Senha errada gera chave
+// errada e a decifragem do gmstore_dados.js falha. Regerar se a senha do cliente (salt dos dados) mudar.
+const ADMIN_COFRE = {"salt": "wo1UgzT+2qD9+BZNDjNQrA==", "iter": 600000, "k": "mcdqhE6t9E0Z3Kn751aL6n+2BSp0W/eWmLsrDi8qn9M="};
 let CHAVE = null;                  // { key: CryptoKey, salt, iter } depois do login — usada no "⬇ Dados cliente"
 
 function paraB64(bytes) {
@@ -1220,6 +1225,13 @@ async function derivarChave(senha, salt, iter) {
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: deB64(salt), iterations: iter || CRIPTO_ITER, hash: 'SHA-256' },
     base, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+}
+async function chaveDoAdmin(senha) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveBits']);
+  const pad = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: deB64(ADMIN_COFRE.salt), iterations: ADMIN_COFRE.iter, hash: 'SHA-256' }, base, 256));
+  const k = deB64(ADMIN_COFRE.k).map((b, i) => b ^ pad[i]);
+  return crypto.subtle.importKey('raw', k, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
 }
 async function decifrarDados(key, pacote) {
   const claro = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(pacote.iv) }, key, deB64(pacote.dados));
@@ -1348,7 +1360,8 @@ async function fazerLogin() {
   btn.disabled = true;
   btn.textContent = 'Verificando...';
   try {
-    const chave = { key: await derivarChave(campo.value, pacote.salt, pacote.iter), salt: pacote.salt, iter: pacote.iter };
+    const key = EH_CLIENTE ? await derivarChave(campo.value, pacote.salt, pacote.iter) : await chaveDoAdmin(campo.value);
+    const chave = { key, salt: pacote.salt, iter: pacote.iter };
     await desbloquear(chave);
     try {
       if (document.getElementById('input-lembrar').checked) {
