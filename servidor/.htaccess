@@ -1,0 +1,5 @@
+# config.php guarda o token: nunca servido diretamente
+<Files "config.php">
+  Require all denied
+</Files>
+Options -Indexes

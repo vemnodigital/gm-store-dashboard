@@ -1194,6 +1194,10 @@ const FIXED_KW_STA     = 'STA';
 const FIXED_KW_CASTELO = 'CASTELO';
 // Cliente sem senha: chave AES já derivada (preenchida só pelo gerar_cliente.py na build da Hostinger)
 const CHAVE_CLIENTE    = '';
+// Intermediário no servidor (build Hostinger): o painel chama api.php e o token fica só em config.php.
+// Vazio = chama o Meta direto com o token do localStorage (admin no GitHub)
+const PROXY_URL        = '';
+let AUTH_PROXY = '';   // sha256 da chave dos dados (só existe depois do login) — o api.php confere
 // A senha NÃO fica no código: ela é a chave que decifra gmstore_dados.js (ver CRIPTOGRAFIA)
 // 'admin' = este arquivo (config/vendas/análise)
 // 'cliente' = gmstore_dashboard_cliente.html, gerado por gerar_cliente.py — não editar o cliente à mão
@@ -1344,6 +1348,10 @@ function mostrarErroLogin(msg) {
 async function desbloquear(chave) {
   window.GM_DADOS = await decifrarDados(chave.key, window.GM_DADOS_CRIPTO);
   CHAVE = chave;
+  if (PROXY_URL) {
+    const hash = await crypto.subtle.digest('SHA-256', await crypto.subtle.exportKey('raw', chave.key));
+    AUTH_PROXY = [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
   HISTORICO_INICIAL = {};
   MESES_PLANILHA.forEach(mes => { if (GM_DADOS.historico?.[mes]) HISTORICO_INICIAL[mes] = GM_DADOS.historico[mes]; });
   if (!EH_CLIENTE) prepararDadosAdmin();
@@ -1390,7 +1398,7 @@ async function carregarConfig() {
       const btnSair = document.getElementById('btn-sair');
       if (btnSair) btnSair.style.display = 'none';
       const pacote = window.GM_DADOS_CRIPTO;
-      const key = await crypto.subtle.importKey('raw', deB64(CHAVE_CLIENTE), { name: 'AES-GCM' }, false, ['decrypt']);
+      const key = await crypto.subtle.importKey('raw', deB64(CHAVE_CLIENTE), { name: 'AES-GCM' }, true, ['decrypt']);
       await desbloquear({ key, salt: pacote.salt, iter: pacote.iter });
       return;
     } catch (e) {
@@ -1417,6 +1425,18 @@ async function carregarConfig() {
 }
 
 function abrirDashboardAposLogin() {
+  // Intermediário: sem token no navegador ('proxy' só marca que as chamadas podem seguir)
+  if (PROXY_URL && FIXED_ACCOUNT) {
+    CFG = {
+      token: 'proxy',
+      account: normalizeAccount(FIXED_ACCOUNT),
+      kwSta: FIXED_KW_STA || 'STA',
+      kwCastelo: FIXED_KW_CASTELO || 'CASTELO'
+    };
+    document.getElementById('dashboard').style.display = 'block';
+    setPreset('mesant');
+    return;
+  }
   // Token fixo embutido
   if (FIXED_TOKEN && FIXED_ACCOUNT) {
     CFG = {
@@ -1486,23 +1506,30 @@ const BASE = 'https://graph.facebook.com/v19.0';
 const CONV_ACTION = 'onsite_conversion.messaging_conversation_started_7d';
 
 async function apiGet(endpoint, params={}) {
-  const url = new URL(`${BASE}/${endpoint}`);
-  url.searchParams.set('access_token', CFG.token);
+  let url, opts = {};
+  if (PROXY_URL) {
+    url = new URL(PROXY_URL, location.href);
+    url.searchParams.set('path', endpoint);
+    opts.headers = { 'X-GM-Auth': AUTH_PROXY };
+  } else {
+    url = new URL(`${BASE}/${endpoint}`);
+    url.searchParams.set('access_token', CFG.token);
+  }
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v));
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), opts);
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data;
 }
 
+// Próximas páginas pelo cursor "after" (o link paging.next traz o token, e o api.php o remove)
 async function paginar(endpoint, params) {
   let items = [];
   let data = await apiGet(endpoint, params);
   items = items.concat(data.data || []);
-  while (data.paging && data.paging.next) {
-    const res = await fetch(data.paging.next);
-    data = await res.json();
-    if (data.error) break;
+  while (data.paging && data.paging.cursors && data.paging.cursors.after && (data.paging.next || data.paging.tem_mais)) {
+    try { data = await apiGet(endpoint, Object.assign({}, params, { after: data.paging.cursors.after })); }
+    catch (e) { break; }
     items = items.concat(data.data || []);
   }
   return items;
