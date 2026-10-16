@@ -7,6 +7,9 @@ Uso:
   GM_ACCOUNT=act_123 GM_PROXY_SENHA='<senha do cliente>' python3 gerar_cliente.py
       # Hostinger com intermediário (recomendado): token fica em hostinger/config.php, fora do HTML.
       # GM_TOKEN opcional — sem ele, config.php sai com COLE_AQUI_O_TOKEN para colar no servidor
+  GM_VERCEL=1 GM_ACCOUNT=act_123 GM_PROXY_SENHA='<senha do cliente>' python3 gerar_cliente.py
+      # Vercel com intermediário: gera vercel/ (index.html, gmstore_dados.js, api/meta.js) e imprime
+      # GM_AUTH/GM_CONTA para as variáveis de ambiente; GM_TOKEN é cadastrado direto na Vercel
 
 Sem token: escreve gmstore_dashboard_cliente.html + index.html (versões do repo, sem credencial).
 Com token: escreve só hostinger/index.html + hostinger/gmstore_dados.js — pasta fora do git,
@@ -51,6 +54,19 @@ if senha_proxy and conta:
     chave = hashlib.pbkdf2_hmac('sha256', senha_proxy.encode(), base64.b64decode(pacote['salt']), pacote['iter'], 32)
     auth = hashlib.sha256(chave).hexdigest()
     html = trocar(html, "const FIXED_ACCOUNT    = '';", f"const FIXED_ACCOUNT    = '{conta}';")
+    if os.environ.get('GM_VERCEL'):
+        html = trocar(html, "const PROXY_URL        = '';", "const PROXY_URL        = '/api/meta';")
+        pasta = DIR / 'vercel'
+        (pasta / 'api').mkdir(parents=True, exist_ok=True)
+        SAIDAS = [pasta / 'index.html']
+        shutil.copy(DIR / 'gmstore_dados.js', pasta / 'gmstore_dados.js')
+        shutil.copy(DIR / 'servidor' / 'vercel' / 'api' / 'meta.js', pasta / 'api' / 'meta.js')
+        print('Intermediário Vercel: vercel/ com index.html, gmstore_dados.js, api/meta.js')
+        print(f'Variáveis de ambiente: GM_CONTA={conta}  GM_AUTH={auth}  (+ GM_TOKEN, cadastrado na Vercel)')
+        for saida in SAIDAS:
+            saida.write_text(html, encoding='utf-8')
+            print(f'Gerado: {saida.relative_to(DIR)}')
+        raise SystemExit(0)
     html = trocar(html, "const PROXY_URL        = '';", "const PROXY_URL        = 'api.php';")
     pasta = DIR / 'hostinger'
     pasta.mkdir(exist_ok=True)
