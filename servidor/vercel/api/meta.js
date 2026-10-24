@@ -39,7 +39,9 @@ module.exports = async (req, res) => {
 
   const chaveCache = path + '?' + new URLSearchParams(params);   // sem o token
   const guardado = cache.get(chaveCache);
-  if (guardado && Date.now() - guardado.em < CACHE_MS) return res.status(200).json(guardado.dados);
+  // Status dos anúncios (/ads) muda pouco e tem limite de chamadas mais baixo no Meta: 30 min
+  const validade = path.endsWith('/ads') ? 3 * CACHE_MS : CACHE_MS;
+  if (guardado && Date.now() - guardado.em < validade) return res.status(200).json(guardado.dados);
 
   params.access_token = token;
   const base = process.env.GM_BASE || 'https://graph.facebook.com/';
