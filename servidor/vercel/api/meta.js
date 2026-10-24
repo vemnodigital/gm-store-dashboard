@@ -4,7 +4,12 @@
 // gerado pelo gerar_cliente.py), GM_VERSAO (opcional, padrão v19.0), GM_BASE (só testes locais)
 const crypto = require('crypto');
 
-const PERMITIDOS = ['fields', 'time_range', 'level', 'limit', 'after'];
+const PERMITIDOS = ['fields', 'time_range', 'time_increment', 'level', 'limit', 'after'];
+
+// Cache curto em memória (a instância da função é reaproveitada entre acessos): poupa o limite de
+// chamadas do Meta quando o painel é aberto várias vezes. Só guarda respostas sem erro.
+const CACHE_MS = 10 * 60 * 1000;
+const cache = new Map();
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -31,8 +36,12 @@ module.exports = async (req, res) => {
   for (const p of PERMITIDOS) if (typeof q[p] === 'string') params[p] = q[p];
   // Só a prévia do criativo, e só de anúncio que pertence à conta da GM
   if (ehAnuncio) params = { fields: 'account_id,creative{thumbnail_url,image_url}' };
-  params.access_token = token;
 
+  const chaveCache = path + '?' + new URLSearchParams(params);   // sem o token
+  const guardado = cache.get(chaveCache);
+  if (guardado && Date.now() - guardado.em < CACHE_MS) return res.status(200).json(guardado.dados);
+
+  params.access_token = token;
   const base = process.env.GM_BASE || 'https://graph.facebook.com/';
   const url = `${base}${process.env.GM_VERSAO || 'v19.0'}/${path}?${new URLSearchParams(params)}`;
   let resposta, dados;
@@ -53,6 +62,10 @@ module.exports = async (req, res) => {
     if (dados.paging.next) dados.paging.tem_mais = true;
     delete dados.paging.next;
     delete dados.paging.previous;
+  }
+  if (resposta.ok && !dados.error) {
+    if (cache.size > 500) cache.clear();
+    cache.set(chaveCache, { em: Date.now(), dados });
   }
   res.status(resposta.status).json(dados);
 };

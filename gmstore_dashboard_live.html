@@ -361,6 +361,86 @@ tbody td{padding:10px 16px;font-size:12px;}
   .funnel-stats{width:100%;}
 }
 
+/* FUNIL — etapas */
+.fv{width:100%;}
+.fv2{width:88%;} .fv3{width:72%;} .fv4{width:58%;} .fv5{width:46%;} .fv6{width:36%;}
+.funnel-bar .fb-l{font-size:11px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.funnel-bar .fb-v{font-weight:800;font-size:14px;white-space:nowrap;padding-left:8px;}
+.fstats-titulo{font-size:10px;color:var(--t-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+.fstats-lojas{background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#94a3b8;line-height:1.6;margin-top:4px;}
+body.theme-light .fstats-lojas{background:#f8fafc;color:#475569;}
+
+/* COMERCIAL — aviso quando o período não tem venda comparável */
+.aviso-comercial{background:#2a1e10;border:1px solid #92400e;color:#fbbf24;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.5;margin-bottom:12px;}
+body.theme-light .aviso-comercial{background:#fffbeb;border-color:#f59e0b;color:#92400e;}
+
+/* TOP 3 ANÚNCIOS */
+.top-ad{border:1px solid;border-radius:12px;padding:20px;margin-bottom:10px;display:grid;grid-template-columns:110px minmax(0,1fr);grid-template-areas:"thumb info" "thumb metricas";column-gap:20px;row-gap:12px;}
+.top-ad-thumb{grid-area:thumb;width:110px;height:110px;background:#12151e;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2d3148;font-size:32px;}
+.top-ad-thumb img{width:100%;height:100%;object-fit:cover;}
+.top-ad-info{grid-area:info;min-width:0;}
+.top-ad-rotulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.top-ad-nome{font-size:15px;font-weight:700;color:var(--t-text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top-ad-camp{font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top-ad-metricas{grid-area:metricas;display:flex;gap:24px;flex-wrap:wrap;}
+.top-ad-metricas .ml{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;}
+.top-ad-metricas .mv{font-size:26px;font-weight:800;}
+
+/* CELULAR */
+@media(max-width:700px){
+  header{padding:12px 16px;gap:10px;}
+  .logo-area img{width:38px;height:38px;}
+  .logo-area h1{font-size:16px;}
+  .header-right{width:100%;gap:8px;}
+  .date-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+  .date-row > span{display:none;}
+  .date-row label{min-width:0;}
+  .date-input{width:100%;min-width:0;font-size:16px;padding:8px 10px;}   /* 16px: o iPhone não dá zoom ao tocar */
+  .preset-btn{padding:10px 6px;font-size:13px;}
+  .btn-fetch{grid-column:1/-1;padding:12px;font-size:14px;}
+  .store-filter{width:100%;}
+  .store-btn{flex:1;padding:10px 6px;font-size:13px;}
+  header .btn-export,header .btn-theme,header .btn-settings,header .btn-vendas,header .btn-analise{flex:1 1 auto;padding:10px 12px;font-size:13px;}
+  header .date-row .preset-btn,header .store-btn{min-height:40px;}
+  .tab-nav{padding:0 16px;overflow-x:auto;}
+  .container{padding:16px;}
+  .section-title{font-size:11px;margin-top:22px;}
+  .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .card{padding:13px;}
+  .card .lbl,.sm .sl{font-size:11px;letter-spacing:0.5px;}
+  .card .val{font-size:19px;}
+  .card .sub,.sm .ss{font-size:11.5px;line-height:1.4;}
+  .sm{padding:11px 12px;}
+  .sm .sv{font-size:16px;}
+  .login-field input{font-size:16px;}
+
+  .funnel-wrapper{padding:18px 14px;gap:18px;}
+  .funnel-visual{width:100%;}
+  .cards-grid > .card:last-child:nth-child(odd){grid-column:1/-1;}   /* card sozinho na última linha ocupa a largura toda */
+  .fv2{width:96%;} .fv3{width:90%;} .fv4{width:84%;} .fv5{width:78%;} .fv6{width:72%;}
+  .funnel-bar{padding:10px 16px;}
+
+  .top-ad{grid-template-columns:72px minmax(0,1fr);grid-template-areas:"thumb info" "metricas metricas";padding:14px;column-gap:14px;}
+  .top-ad-thumb{width:72px;height:72px;font-size:24px;}
+  .top-ad-metricas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .top-ad-metricas .mv{font-size:17px;}
+
+  /* tabelas viram cartões (rótulo de cada valor vem do data-label) */
+  table.tbl-cards thead{display:none;}
+  table.tbl-cards,table.tbl-cards tbody{display:block;width:100%;}
+  table.tbl-cards tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;padding:13px 14px;}
+  table.tbl-cards td{padding:0!important;max-width:none!important;white-space:normal!important;text-align:left!important;font-size:13px;min-width:0;overflow-wrap:anywhere;}
+  table.tbl-cards td::before{content:attr(data-label);display:block;font-size:10px;font-weight:600;color:var(--t-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
+  table.tbl-cards td:first-child,table.tbl-cards td[colspan]{grid-column:1/-1;font-size:14px;}
+  table.tbl-cards td:first-child::before,table.tbl-cards td[colspan]::before{display:none;}
+  table.tbl-ads td:nth-child(2){grid-column:1/-1;}
+  /* ranking: posição + mês na mesma linha; sem colunas secundárias */
+  table.tbl-ranking td:first-child{grid-column:auto;font-size:20px!important;text-align:left!important;}
+  table.tbl-ranking td:nth-child(2){font-size:15px;align-self:center;}
+  table.tbl-ranking td:nth-child(2)::before{display:none;}
+  table.tbl-ranking td[data-label="Leads"],table.tbl-ranking td[data-label="Custo/Lead"],table.tbl-ranking td[data-label="Rel. ao Melhor"]{display:none;}
+}
+
 /* HISTÓRICO */
 .trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:12px;}
 .trend.up{color:#69db7c;background:#1a2a1e;}
@@ -871,18 +951,18 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
     <div class="header-right">
       <!-- PRESETS -->
       <div class="date-row">
-        <button class="preset-btn" onclick="setPreset('7d')">7 dias</button>
-        <button class="preset-btn" onclick="setPreset('30d')">30 dias</button>
-        <button class="preset-btn" onclick="setPreset('mes')">Este mês</button>
-        <button class="preset-btn" onclick="setPreset('mesant')">Mês anterior</button>
+        <button class="preset-btn" data-preset="7d" onclick="setPreset('7d', true)">7 dias</button>
+        <button class="preset-btn" data-preset="30d" onclick="setPreset('30d', true)">30 dias</button>
+        <button class="preset-btn" data-preset="mes" onclick="setPreset('mes', true)">Este mês</button>
+        <button class="preset-btn" data-preset="mesant" onclick="setPreset('mesant', true)">Mês anterior</button>
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer;" title="Clique para escolher data inicial">
           <span style="font-size:13px;">📅</span>
-          <input type="date" id="date-start" class="date-input" style="cursor:pointer;"/>
+          <input type="date" id="date-start" class="date-input" onchange="setPresetManual()"/>
         </label>
         <span style="color:#4b5563;font-size:13px;">→</span>
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer;" title="Clique para escolher data final">
           <span style="font-size:13px;">📅</span>
-          <input type="date" id="date-end" class="date-input" style="cursor:pointer;"/>
+          <input type="date" id="date-end" class="date-input" onchange="setPresetManual()"/>
         </label>
         <button class="btn-fetch" id="btn-fetch" onclick="buscarDados()">Buscar</button>
       </div>
@@ -928,9 +1008,10 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
 
       <!-- CARDS COMERCIAIS (vendas) -->
       <div class="section-title" id="lbl-comercial">Comercial — Visão Geral</div>
+      <div class="aviso-comercial" id="aviso-comercial" style="display:none;"></div>
       <div class="cards-grid">
         <div class="card" id="card-fat-online"><div class="lbl">Faturamento Total</div><div class="val" id="c-fat-online">—</div><div class="sub" id="c-fat-online-sub">STA + Castelo + Entrega</div></div>
-        <div class="card" id="card-vendas-loja"><div class="lbl">Vendas Fechadas</div><div class="val" id="c-vendas-total">—</div><div class="sub" id="c-vendas-sub">STA · Castelo · Entrega</div></div>
+        <div class="card" id="card-vendas-loja"><div class="lbl">Vendas Fechadas</div><div class="val" id="c-vendas">—</div><div class="sub" id="c-vendas-sub">STA · Castelo · Entrega</div></div>
         <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub" id="c-cpv-sub">Investido ÷ total vendas</div></div>
         <div class="card" id="card-roas"><div class="lbl">ROAS</div><div class="val" id="c-roas">—</div><div class="sub" id="c-roas-sub">Fat. total ÷ investimento</div></div>
         <div class="card" id="card-conversao"><div class="lbl">Conversão Contato → Venda</div><div class="val" id="c-conversao">—</div><div class="sub" id="c-conversao-sub">Vendas ÷ conversas WhatsApp</div></div>
@@ -958,7 +1039,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
       <div class="table-box">
         <h3 id="table-camp-title">Campanhas do período — ranking por eficiência</h3>
         <div style="overflow-x:auto;">
-          <table>
+          <table class="tbl-cards tbl-camp">
             <thead>
               <tr>
                 <th>Campanha</th><th>Loja</th>
@@ -981,7 +1062,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
       <div class="table-box">
         <h3>Ordenados pelo menor custo por conversa — melhores primeiro</h3>
         <div style="overflow-x:auto;">
-          <table>
+          <table class="tbl-cards tbl-ads">
             <thead>
               <tr>
                 <th>Anúncio</th><th>Campanha</th>
@@ -1303,7 +1384,7 @@ async function salvarConfig() {
     localStorage.setItem('gmstore_cfg', JSON.stringify(CFG));
     document.getElementById('setup-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant');
+    setPreset('mesant', true);
   } catch(e) {
     btn.textContent = 'Salvar e Abrir Dashboard';
     btn.disabled = false;
@@ -1434,7 +1515,7 @@ function abrirDashboardAposLogin() {
       kwCastelo: FIXED_KW_CASTELO || 'CASTELO'
     };
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant');
+    setPreset('mesant', true);
     return;
   }
   // Token fixo embutido
@@ -1446,7 +1527,7 @@ function abrirDashboardAposLogin() {
       kwCastelo: FIXED_KW_CASTELO || 'CASTELO'
     };
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant');
+    setPreset('mesant', true);
     return;
   }
   // Sem token fixo: verifica localStorage ou abre config
@@ -1454,7 +1535,7 @@ function abrirDashboardAposLogin() {
   if (saved) {
     CFG = JSON.parse(saved);
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant');
+    setPreset('mesant', true);
   } else if (EH_CLIENTE) {
     // Cliente nunca vê a configuração
     try { localStorage.removeItem(CHAVE_KEY); } catch (e) {}
@@ -1469,11 +1550,8 @@ function abrirDashboardAposLogin() {
 function fmtDate(d) { return d.toISOString().split('T')[0]; }
 function fmtBr(s) { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
 
-function setPreset(p) {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  // window.event também existe no carregamento automático (target = document): só marca se veio de um botão
-  const alvo = window.event && window.event.target;
-  if (alvo && alvo.classList && alvo.classList.contains('preset-btn')) alvo.classList.add('active');
+function setPreset(p, buscar) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === p));
   const hoje = new Date();
   let ini, fim;
   if (p === '7d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-6); }
@@ -1485,7 +1563,10 @@ function setPreset(p) {
   }
   document.getElementById('date-start').value = fmtDate(ini);
   document.getElementById('date-end').value = fmtDate(fim);
+  if (buscar) buscarDados();
 }
+
+function setPresetManual() { document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); }
 
 function setAnalisePreset(p) {
   document.querySelectorAll('#ap-30d,#ap-90d,#ap-6m,#ap-1a').forEach(b => b.classList.remove('active'));
@@ -1518,7 +1599,7 @@ async function apiGet(endpoint, params={}) {
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v));
   const res = await fetch(url.toString(), opts);
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  if (data.error) throw new Error(data.error.error_user_msg || data.error.message);
   return data;
 }
 
@@ -1633,7 +1714,7 @@ function renderDashboard(ini, fim) {
   document.getElementById('c-alcance').textContent = fmtN(totals.reach);
   document.getElementById('c-impr').textContent = fmtN(totals.impressions);
   document.getElementById('c-clicks').textContent = fmtN(totals.clicks);
-  document.getElementById('c-ctr-sub').textContent = `CTR: ${(totals.clicks/totals.impressions*100||0).toFixed(2)}%`;
+  document.getElementById('c-ctr-sub').textContent = `CTR: ${fmtD(totals.clicks/totals.impressions*100||0, 2)}%`;
   document.getElementById('c-conv').textContent = fmtN(totals.conv);
   document.getElementById('c-cpm').textContent = 'R$' + fmt(totals.spend/totals.impressions*1000||0);
   document.getElementById('c-cpc').textContent = totals.conv > 0 ? 'R$' + fmt(totals.spend/totals.conv) : '—';
@@ -1643,6 +1724,7 @@ function renderDashboard(ini, fim) {
   renderCampanhas(camp);
   renderAds(ads);
   renderTopAd(ads);
+  rotularTabelas();
   renderCharts(camp);
   renderAlertas(camp, totals);
   atualizarCardsVendas();
@@ -1682,88 +1764,59 @@ function lojaDecamp(nome) {
 // FUNIL
 function renderFunil(t) {
   const conv = t.conv || 0;
-  const ctrPct = t.impressions > 0 ? (t.clicks/t.impressions*100).toFixed(2) : '—';
-  const convPct = t.clicks > 0 ? (conv/t.clicks*100).toFixed(1) : '—';
+  const ctrPct = t.impressions > 0 ? fmtD(t.clicks / t.impressions * 100, 2) : '—';
+  const convPct = t.clicks > 0 ? fmtD(conv / t.clicks * 100, 1) : '—';
 
-  const vd = carregarVendas(chaveVendas());
-  const totalVendas = (vd.sta.vendas || 0) + (vd.castelo.vendas || 0) + (vd.vendasOnline || 0);
-
-  // Agendamentos da planilha
-  const chave = chaveVendas();
-  const hist = carregarHistorico();
-  const agend = chave && hist[chave] ? hist[chave].agendamentos || 0 : 0;
+  // Mesmas regras dos cards comerciais: meses inteiros, recorte por loja
+  const p = vendasDoPeriodo();
+  const vis = vendasVisao(p);
+  const okV = p.ok && vis.fat > 0;
+  const totalVendas = okV ? vis.vendas : 0;
+  const agend = okV && lojaAtual === 'all' ? p.agend : 0;   // agendamentos não são separados por loja
 
   const cpvReal = totalVendas > 0 ? t.spend / totalVendas : 0;
-  const txConvAgend = conv > 0 && agend > 0 ? (agend/conv*100).toFixed(1) : null;
-  const txAgendVenda = agend > 0 && totalVendas > 0 ? (totalVendas/agend*100).toFixed(1) : null;
-  const vendaBg = totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#7f1d1d,#991b1b)';
-  const vendasDetalhe = totalVendas > 0
-    ? `STA: ${vd.sta.vendas} · Castelo: ${vd.castelo.vendas} · Entrega: ${vd.vendasOnline}`
-    : 'STA · Castelo · Entrega';
+  const etapa = (n, bg, rotulo, valor) =>
+    `<div class="fv fv${n}"><div class="funnel-bar" style="background:${bg};"><span class="fb-l">${rotulo}</span><span class="fb-v">${valor}</span></div></div>`;
+  const ligacao = '<div class="funnel-connector"></div>';
 
-  const agendDrop = agend > 0
-    ? `<div class="funnel-drop fd-ok">↓ ${txConvAgend || '?'}% das conversas agendaram</div>`
-    : `<div class="funnel-drop fd-warn">↓ Agendamentos: dados do mês</div>`;
-  const vendaDrop = totalVendas > 0 && agend > 0
-    ? `<div class="funnel-drop fd-ok">↓ ${txAgendVenda}% dos agendamentos fecharam</div>`
-    : totalVendas > 0
-    ? `<div class="funnel-drop fd-ok">↓ ${totalVendas} vendas no período</div>`
-    : `<div class="funnel-drop fd-bad">↓ Registre as vendas clicando em "+ Vendas"</div>`;
+  let html = etapa(1, 'linear-gradient(90deg,#1d4ed8,#2563eb)', 'Alcance', fmtN(t.reach)) + ligacao
+    + etapa(2, 'linear-gradient(90deg,#1e40af,#3b82f6)', 'Impressões', fmtN(t.impressions)) + ligacao
+    + `<div class="funnel-drop fd-warn">↓ CTR: ${ctrPct}%</div>` + ligacao
+    + etapa(3, 'linear-gradient(90deg,#5b21b6,#7c3aed)', 'Cliques no link', fmtN(t.clicks)) + ligacao
+    + `<div class="funnel-drop fd-ok">↓ ${convPct}% viraram conversa</div>` + ligacao
+    + etapa(4, 'linear-gradient(90deg,#065f46,#059669)', 'Conversas WhatsApp', fmtN(conv));
+  if (agend > 0) {
+    html += ligacao + `<div class="funnel-drop fd-ok">↓ ${fmtD(agend / conv * 100, 1)}% das conversas agendaram</div>` + ligacao
+      + etapa(5, 'linear-gradient(90deg,#0369a1,#0ea5e9)', 'Agendamentos', fmtN(agend));
+  }
+  html += ligacao + (totalVendas > 0
+      ? `<div class="funnel-drop fd-ok">↓ ${agend > 0 ? fmtD(totalVendas / agend * 100, 1) + '% dos agendamentos fecharam' : fmtD(totalVendas / conv * 100, 1) + '% das conversas viraram venda'}</div>`
+      : `<div class="funnel-drop fd-warn">↓ ${okV ? 'Sem vendas no período' : 'Vendas: veja o aviso em Comercial'}</div>`)
+    + ligacao
+    + etapa(6, totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#374151,#4b5563)', 'Vendas', totalVendas > 0 ? fmtN(totalVendas) : '—');
+  document.getElementById('funil-visual').innerHTML = html;
 
-  document.getElementById('funil-visual').innerHTML = `
-    <div style="width:100%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1d4ed8,#2563eb);">
-      <span style="font-size:11px;opacity:0.8;">Alcance</span><span style="font-weight:800;font-size:14px;">${fmtN(t.reach)}</span></div></div>
-    <div class="funnel-connector"></div>
-    <div style="width:88%"><div class="funnel-bar" style="background:linear-gradient(90deg,#1e40af,#3b82f6);">
-      <span style="font-size:11px;opacity:0.8;">Impressões</span><span style="font-weight:800;font-size:14px;">${fmtN(t.impressions)}</span></div></div>
-    <div class="funnel-connector"></div>
-    <div class="funnel-drop fd-warn">↓ CTR: ${ctrPct}%</div>
-    <div class="funnel-connector"></div>
-    <div style="width:65%"><div class="funnel-bar" style="background:linear-gradient(90deg,#5b21b6,#7c3aed);">
-      <span style="font-size:11px;opacity:0.8;">Cliques no Link</span><span style="font-weight:800;font-size:14px;">${fmtN(t.clicks)}</span></div></div>
-    <div class="funnel-connector"></div>
-    <div class="funnel-drop fd-ok">↓ ${convPct}% converteram em conversa</div>
-    <div class="funnel-connector"></div>
-    <div style="width:48%"><div class="funnel-bar" style="background:linear-gradient(90deg,#065f46,#059669);">
-      <span style="font-size:11px;opacity:0.8;">Conversas WA</span><span style="font-weight:800;font-size:14px;">${fmtN(conv)}</span></div></div>
-    <div class="funnel-connector"></div>
-    ${agendDrop}
-    <div class="funnel-connector"></div>
-    <div style="width:32%"><div class="funnel-bar" style="background:linear-gradient(90deg,#0369a1,#0ea5e9);">
-      <span style="font-size:11px;opacity:0.8;">Agendamentos</span><span style="font-weight:800;font-size:14px;">${agend > 0 ? agend : '—'}</span></div></div>
-    <div class="funnel-connector"></div>
-    ${vendaDrop}
-    <div class="funnel-connector"></div>
-    <div style="width:20%"><div class="funnel-bar" style="background:${vendaBg};">
-      <span style="font-size:11px;opacity:0.8;">${vendasDetalhe}</span><span style="font-weight:800;font-size:14px;">${totalVendas > 0 ? totalVendas+' vendas' : '?'}</span></div></div>`;
-
-  const cpvTexto = cpvReal > 0
-    ? `<span style="color:#69db7c;">R$${fmt(cpvReal)}</span>`
-    : `<span style="color:#ff8787;">Registre as vendas</span>`;
-  const roas = vd.fatOnline > 0 && t.spend > 0 ? vd.fatOnline / t.spend : 0;
+  const roas = okV && t.spend > 0 ? vis.fat / t.spend : 0;
   const roasColor = roas >= 3 ? '#69db7c' : roas >= 1.5 ? '#748ffc' : '#ff8787';
-  const roasTexto = roas > 0
-    ? `<span style="color:${roasColor};">${roas.toFixed(2)}x</span>`
-    : '—';
-  const cpcConv = conv > 0 ? 'R$'+fmt(t.spend/conv) : '—';
-
-  document.getElementById('funil-stats').innerHTML = `
-    <div style="font-size:10px;color:var(--t-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Custo em cada etapa</div>
-    <div class="fstat" style="border-color:#3b82f6;"><div class="fs-l">Custo por 1.000 pessoas</div><div class="fs-v" style="color:#748ffc;">R$${fmt(t.spend/t.reach*1000||0)}</div></div>
-    <div class="fstat" style="border-color:#7c3aed;"><div class="fs-l">Custo por clique</div><div class="fs-v" style="color:#a78bfa;">${t.clicks>0?'R$'+fmt(t.spend/t.clicks):'—'}</div></div>
-    <div class="fstat" style="border-color:#059669;"><div class="fs-l">Custo por conversa</div><div class="fs-v" style="color:#69db7c;">${cpcConv}</div></div>
-    <div class="fstat" style="border-color:#0ea5e9;"><div class="fs-l">Agendamentos (mês)</div><div class="fs-v" style="color:#38bdf8;">${agend > 0 ? agend : '—'}</div></div>
-    <div class="fstat" style="border-color:${cpvReal>0?'#059669':'#991b1b'};"><div class="fs-l">Custo por venda (${totalVendas} vendas)</div><div class="fs-v">${cpvTexto}</div></div>
-    <div class="fstat" style="border-color:${roas>=3?'#2f9e44':roas>=1.5?'#3b5bdb':'#991b1b'};"><div class="fs-l">ROAS (fat. total ÷ invest.)</div><div class="fs-v">${roasTexto}</div></div>
-    ${vd.fatOnline > 0 ? `
-    <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
-      <strong style="color:#69db7c;">STA:</strong> R$${fmtK(vd.sta.fatTotal)} · ${vd.sta.vendas} vendas<br>
-      <strong style="color:#f87171;">Castelo:</strong> R$${fmtK(vd.castelo.fatTotal)} · ${vd.castelo.vendas} vendas<br>
-      <strong style="color:#748ffc;">Entrega:</strong> R$${fmtK(fatEntregaDe(vd))} · ${vd.vendasOnline} vendas
-    </div>` : `
-    <div style="background:#12151e;border-radius:8px;padding:11px;font-size:11px;color:#6b7280;line-height:1.6;margin-top:4px;">
-      <strong style="color:#fbbf24;">Estimativa:</strong> se 30% das ${fmtN(conv)} conversas fecharem → <strong style="color:#fff;">${fmtN(Math.round(conv*0.3))} vendas</strong> a <strong style="color:#fff;">${conv>0?'R$'+fmt(t.spend/conv/0.3):'—'}</strong> por venda.
-    </div>`}`;
+  const fstat = (cor, rotulo, valor, corValor) =>
+    `<div class="fstat" style="border-color:${cor};"><div class="fs-l">${rotulo}</div><div class="fs-v"${corValor ? ` style="color:${corValor};"` : ''}>${valor}</div></div>`;
+  let stats = '<div class="fstats-titulo">Custo em cada etapa</div>'
+    + fstat('#3b82f6', 'Custo por 1.000 pessoas', 'R$' + fmt(t.spend / t.reach * 1000 || 0), '#748ffc')
+    + fstat('#7c3aed', 'Custo por clique', t.clicks > 0 ? 'R$' + fmt(t.spend / t.clicks) : '—', '#a78bfa')
+    + fstat('#059669', 'Custo por conversa', conv > 0 ? 'R$' + fmt(t.spend / conv) : '—', '#69db7c');
+  if (agend > 0) stats += fstat('#0ea5e9', 'Agendamentos', fmtN(agend), '#38bdf8');
+  stats += fstat(cpvReal > 0 ? '#059669' : '#374151', `Custo por venda${totalVendas > 0 ? ` (${totalVendas} vendas)` : ''}`, cpvReal > 0 ? 'R$' + fmt(cpvReal) : '—', cpvReal > 0 ? '#69db7c' : '')
+    + fstat(roas >= 3 ? '#2f9e44' : roas >= 1.5 ? '#3b5bdb' : roas > 0 ? '#991b1b' : '#374151', 'ROAS (faturamento ÷ investimento)', roas > 0 ? fmtD(roas, 2) + 'x' : '—', roas > 0 ? roasColor : '');
+  if (okV && lojaAtual === 'all') {
+    stats += `<div class="fstats-lojas">
+      <strong style="color:#60a5fa;">STA:</strong> R$${fmtK(p.sta.fat)} · ${p.sta.vendas} vendas<br>
+      <strong style="color:#f87171;">Castelo:</strong> R$${fmtK(p.castelo.fat)} · ${p.castelo.vendas} vendas<br>
+      <strong style="color:#748ffc;">Entrega:</strong> R$${fmtK(p.entrega.fat)} · ${p.entrega.vendas} vendas
+    </div>`;
+  } else if (!okV && !EH_CLIENTE && conv > 0) {
+    stats += `<div class="fstats-lojas"><strong style="color:#fbbf24;">Estimativa:</strong> se 30% das ${fmtN(conv)} conversas fecharem → <strong>${fmtN(Math.round(conv * 0.3))} vendas</strong> a <strong>R$${fmt(t.spend / conv / 0.3)}</strong> por venda.</div>`;
+  }
+  document.getElementById('funil-stats').innerHTML = stats;
 }
 
 // LOJAS
@@ -1792,7 +1845,7 @@ function renderLojas(camp, ini, fim) {
         <div class="sm"><div class="sl">Custo/Conv</div><div class="sv" style="color:#69db7c;">R$${cpcSta}</div><div class="ss"></div></div>
         <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(ts.reach)}</div><div class="ss">pessoas</div></div>
         <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(ts.spend/ts.impressions*1000||0)}</div><div class="ss"></div></div>
-        <div class="sm"><div class="sl">CTR</div><div class="sv">${ts.impressions>0?(ts.clicks/ts.impressions*100).toFixed(2):0}%</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">CTR</div><div class="sv">${fmtD(ts.impressions>0?ts.clicks/ts.impressions*100:0, 2)}%</div><div class="ss"></div></div>
       </div></div>`;
   }
   if (lojaAtual !== 'sta') {
@@ -1808,7 +1861,7 @@ function renderLojas(camp, ini, fim) {
         <div class="sm"><div class="sl">Custo/Conv</div><div class="sv" style="color:#f87171;">R$${cpcCas}</div><div class="ss"></div></div>
         <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(tc.reach)}</div><div class="ss">pessoas</div></div>
         <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(tc.spend/tc.impressions*1000||0)}</div><div class="ss"></div></div>
-        <div class="sm"><div class="sl">CTR</div><div class="sv">${tc.impressions>0?(tc.clicks/tc.impressions*100).toFixed(2):0}%</div><div class="ss"></div></div>
+        <div class="sm"><div class="sl">CTR</div><div class="sv">${fmtD(tc.impressions>0?tc.clicks/tc.impressions*100:0, 2)}%</div><div class="ss"></div></div>
       </div></div>`;
   }
   document.getElementById('stores-grid').innerHTML = html || '<div style="color:var(--t-dim);padding:16px;font-size:13px;">Sem dados para as lojas no período.</div>';
@@ -1830,7 +1883,7 @@ function renderCampanhas(camp) {
     const spend = parseFloat(c.spend||0);
     const cpc = conv>0?fmt(spend/conv):'—';
     const cpm = fmt(parseFloat(c.cpm||0));
-    const ctr = parseFloat(c.ctr||0).toFixed(2);
+    const ctr = fmtD(parseFloat(c.ctr||0), 2);
     const loja = lojaDecamp(c.campaign_name);
     const lojaBadge = loja==='sta'?`<span class="badge" style="background:#1e3a5f;color:#60a5fa;">STA</span>`
                     : loja==='castelo'?`<span class="badge" style="background:#3a1a1a;color:#f87171;">Castelo</span>`
@@ -1912,19 +1965,17 @@ async function renderTopAd(ads) {
     const lojaBadge = loja==='sta'     ? '<span class="badge" style="background:#1e3a5f;color:#60a5fa;">STA</span>'
                     : loja==='castelo' ? '<span class="badge" style="background:#3a1a1a;color:#f87171;">Castelo</span>' : '';
     return `
-      <div style="background:${gradients[i]};border:1px solid ${borderColors[i]};border-radius:12px;padding:20px;display:flex;gap:20px;align-items:flex-start;margin-bottom:10px;">
-        <div id="top-ad-thumb-${i}" style="width:110px;height:110px;background:#12151e;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2d3148;">
-          <span style="font-size:32px;">🖼️</span>
+      <div class="top-ad" style="background:${gradients[i]};border-color:${borderColors[i]};">
+        <div class="top-ad-thumb" id="top-ad-thumb-${i}"><span>🖼️</span></div>
+        <div class="top-ad-info">
+          <div class="top-ad-rotulo" style="color:${labelColors[i]};">${medals[i]} ${labels[i]}</div>
+          <div class="top-ad-nome">${ad.ad_name||'—'}</div>
+          <div class="top-ad-camp">${lojaBadge} ${ad.campaign_name||'—'}</div>
         </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:10px;color:${labelColors[i]};font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">${medals[i]} ${labels[i]}</div>
-          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ad.ad_name||'—'}</div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ad.campaign_name||'—'} ${lojaBadge}</div>
-          <div style="display:flex;gap:24px;flex-wrap:wrap;">
-            <div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">Conversas</div><div style="font-size:26px;font-weight:800;color:${labelColors[i]};">${fmtN(conv)}</div></div>
-            <div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">Custo/Conv</div><div style="font-size:26px;font-weight:800;color:#748ffc;">${cpc}</div></div>
-            <div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">Investido</div><div style="font-size:26px;font-weight:800;color:#94a3b8;">R$${fmt(spend)}</div></div>
-          </div>
+        <div class="top-ad-metricas">
+          <div><div class="ml">Conversas</div><div class="mv" style="color:${labelColors[i]};">${fmtN(conv)}</div></div>
+          <div><div class="ml">Custo/conv.</div><div class="mv" style="color:#748ffc;">${cpc}</div></div>
+          <div><div class="ml">Investido</div><div class="mv" style="color:#94a3b8;">R$${fmt(spend)}</div></div>
         </div>
       </div>`;
   }).join('');
@@ -1937,7 +1988,7 @@ async function renderTopAd(ads) {
       const thumb = data?.creative?.thumbnail_url || data?.creative?.image_url;
       const thumbEl = document.getElementById(`top-ad-thumb-${i}`);
       if (thumb && thumbEl) {
-        thumbEl.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<span style=\\'font-size:32px;\\'>🖼️</span>'"/>`;
+        thumbEl.innerHTML = `<img src="${thumb}" alt="" onerror="this.parentElement.innerHTML='<span>🖼️</span>'"/>`;
       }
     } catch(e) { /* sem prévia */ }
   });
@@ -2032,6 +2083,7 @@ function setLoja(l) {
 function destroyCharts() { Object.values(charts).forEach(c=>c&&c.destroy()); charts={}; }
 function fmt(n) { return parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtN(n) { return parseInt(n||0).toLocaleString('pt-BR'); }
+function fmtD(n, d) { return (isFinite(n) ? n : 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }); }
 function totPct(v, total) { return total>0?Math.round(v/total*100):0; }
 function mostrarLoading(show, txt) {
   const el = document.getElementById('loading');
@@ -2155,78 +2207,108 @@ document.querySelectorAll('#modal-vendas input').forEach(inp => {
   });
 });
 
+// Vendas são lançadas por mês fechado: no período só entram meses inteiros (1º ao último dia).
+// Período quebrado (7/30 dias, mês em andamento) não tem venda comparável ao investimento.
+function vendasDoPeriodo() {
+  const ini = document.getElementById('date-start').value;
+  const fim = document.getElementById('date-end').value;
+  const p = { meses: [], semRegistro: [], parcial: false, emAndamento: false, agend: 0, fat: 0,
+              sta: { fat: 0, vendas: 0 }, castelo: { fat: 0, vendas: 0 }, entrega: { fat: 0, vendas: 0 } };
+  if (!ini || !fim || fim < ini) return p;
+  const todas = lerDados('gmstore_vendas');
+  const hist = carregarHistorico();
+  const hoje = new Date();
+  const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  let [y, m] = ini.split('-').map(Number);
+  for (;;) {
+    const chave = `${y}-${String(m).padStart(2, '0')}`;
+    const primeiro = `${chave}-01`;
+    const ultimo = `${chave}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+    if (primeiro > fim) break;
+    if (primeiro >= ini && ultimo <= fim) {
+      p.meses.push(chave);
+      const v = todas[chave];
+      if (!v || !(v.fatOnline > 0)) p.semRegistro.push(chave);
+      else {
+        p.fat += v.fatOnline;
+        p.sta.fat += v.sta?.fatTotal || 0;         p.sta.vendas += v.sta?.vendas || 0;
+        p.castelo.fat += v.castelo?.fatTotal || 0; p.castelo.vendas += v.castelo?.vendas || 0;
+        p.entrega.fat += fatEntregaDe(v);          p.entrega.vendas += v.vendasOnline || 0;
+      }
+      p.agend += hist[chave]?.agendamentos || 0;
+    } else {
+      p.parcial = true;
+      if (chave === mesHoje) p.emAndamento = true;
+    }
+    if (++m > 12) { m = 1; y++; }
+  }
+  p.ok = p.meses.length > 0 && !p.parcial && !p.semRegistro.length;
+  return p;
+}
+
+// Recorte do filtro de loja (vendas de Entrega não pertencem a STA nem a Castelo)
+function vendasVisao(p) {
+  if (lojaAtual === 'sta') return { fat: p.sta.fat, vendas: p.sta.vendas };
+  if (lojaAtual === 'castelo') return { fat: p.castelo.fat, vendas: p.castelo.vendas };
+  return { fat: p.fat, vendas: p.sta.vendas + p.castelo.vendas + p.entrega.vendas };
+}
+
+function motivoSemVendas(p) {
+  if (p.emAndamento) return 'Mês em andamento — as vendas entram no fechamento do mês.';
+  if (p.parcial) return 'As vendas são fechadas por mês: escolha um mês completo (ex.: "Mês anterior") para ver faturamento, ROAS e custo por venda.';
+  if (p.semRegistro.length) {
+    const nomes = p.semRegistro.map(m => MESES_EXTENSO[+m.slice(5) - 1] + '/' + m.slice(2, 4)).join(', ');
+    return EH_CLIENTE ? `Vendas de ${nomes} ainda não informadas.` : `Sem vendas de ${nomes} — registre em "+ Vendas".`;
+  }
+  return '';
+}
+
 function atualizarCardsVendas() {
-  const chave = chaveVendas();
-  if (!chave) return;
-  const v = carregarVendas(chave);
+  const p = vendasDoPeriodo();
+  const vis = vendasVisao(p);
   const totals = somarTotais(filtrarPorLoja(dadosCamp));
+  const ok = p.ok && vis.fat > 0;
+  const card = (id, cls, val, sub) => {
+    document.getElementById('card-' + id[0]).className = 'card' + (cls ? ' ' + cls : '');
+    document.getElementById('c-' + id[1]).textContent = val;
+    document.getElementById('c-' + id[1] + '-sub').textContent = sub;
+  };
 
-  const totalVendas = (v.sta.vendas || 0) + (v.castelo.vendas || 0) + (v.vendasOnline || 0);
-  const cpv = totalVendas > 0 ? totals.spend / totalVendas : 0;
-  const temDados = v.fatOnline > 0;
+  const aviso = document.getElementById('aviso-comercial');
+  aviso.textContent = ok ? '' : (motivoSemVendas(p) || 'Sem vendas registradas para esta loja no período.');
+  aviso.style.display = ok ? 'none' : 'block';
 
-  // Card faturamento total
-  const cfo = document.getElementById('card-fat-online');
-  cfo.className = v.fatOnline > 0 ? 'card c-green' : 'card';
-  document.getElementById('c-fat-online').textContent = v.fatOnline > 0 ? 'R$' + fmt(v.fatOnline) : '—';
-  document.getElementById('c-fat-online-sub').textContent = v.fatOnline > 0
-    ? `STA: R$${fmtK(v.sta.fatTotal)} · Castelo: R$${fmtK(v.castelo.fatTotal)}`
-    : 'STA + Castelo + Entrega';
-
-  // Card vendas por loja
-  const cvl = document.getElementById('card-vendas-loja');
-  cvl.className = totalVendas > 0 ? 'card c-green' : 'card';
-  document.getElementById('c-vendas-total').textContent = totalVendas > 0 ? totalVendas + ' vendas' : '—';
-  document.getElementById('c-vendas-sub').textContent = totalVendas > 0
-    ? `STA: ${v.sta.vendas} · Castelo: ${v.castelo.vendas} · Entrega: ${v.vendasOnline}`
-    : 'STA · Castelo · Entrega';
-
-  // Card custo por venda
-  const ccpv = document.getElementById('card-cpv');
-  ccpv.className = cpv > 0 ? 'card c-blue' : 'card';
-  document.getElementById('c-cpv').textContent = cpv > 0 ? 'R$' + fmt(cpv) : '—';
-  document.getElementById('c-cpv-sub').textContent = cpv > 0
-    ? `R$${fmt(totals.spend)} ÷ ${totalVendas} vendas`
-    : 'Investido ÷ total vendas';
-
-  // Card ROAS
-  const roas = (v.fatOnline > 0 && totals.spend > 0) ? v.fatOnline / totals.spend : 0;
-  const cardRoas = document.getElementById('card-roas');
-  if (roas > 0) {
-    cardRoas.className = roas >= 3 ? 'card c-green' : roas >= 1.5 ? 'card c-blue' : 'card c-red';
-    document.getElementById('c-roas').textContent = roas.toFixed(2) + 'x';
-    document.getElementById('c-roas-sub').textContent =
-      roas >= 3 ? `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Excelente`
-    : roas >= 1.5 ? `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Bom`
-    : `R$${fmt(v.fatOnline)} ÷ R$${fmt(totals.spend)} — Atenção`;
+  if (!ok) {
+    card(['fat-online', 'fat-online'], '', '—', 'STA + Castelo + Entrega');
+    card(['vendas-loja', 'vendas'], '', '—', 'STA · Castelo · Entrega');
+    card(['cpv', 'cpv'], '', '—', 'Investido ÷ total de vendas');
+    card(['roas', 'roas'], '', '—', 'Faturamento ÷ investimento');
+    card(['conversao', 'conversao'], '', '—', 'Vendas ÷ conversas WhatsApp');
   } else {
-    cardRoas.className = 'card';
-    document.getElementById('c-roas').textContent = '—';
-    document.getElementById('c-roas-sub').textContent = 'Registre o faturamento via + Vendas';
+    const nMeses = p.meses.length > 1 ? ` · ${p.meses.length} meses` : '';
+    const porLoja = lojaAtual === 'all';
+    card(['fat-online', 'fat-online'], 'c-green', 'R$' + fmt(vis.fat), porLoja
+      ? `STA R$${fmtK(p.sta.fat)} · Castelo R$${fmtK(p.castelo.fat)}${p.entrega.fat > 0 ? ' · Entrega R$' + fmtK(p.entrega.fat) : ''}${nMeses}`
+      : `Loja ${lojaAtual === 'sta' ? 'STA' : 'Castelo'}${nMeses}`);
+    card(['vendas-loja', 'vendas'], vis.vendas > 0 ? 'c-green' : '', vis.vendas + (vis.vendas === 1 ? ' venda' : ' vendas'), porLoja
+      ? `STA ${p.sta.vendas} · Castelo ${p.castelo.vendas} · Entrega ${p.entrega.vendas}`
+      : `Ticket médio R$${fmt(vis.vendas > 0 ? vis.fat / vis.vendas : 0)}`);
+    const cpv = vis.vendas > 0 ? totals.spend / vis.vendas : 0;
+    card(['cpv', 'cpv'], cpv > 0 ? 'c-blue' : '', cpv > 0 ? 'R$' + fmt(cpv) : '—',
+      cpv > 0 ? `R$${fmt(totals.spend)} ÷ ${vis.vendas} vendas` : 'Investido ÷ total de vendas');
+    const roas = totals.spend > 0 ? vis.fat / totals.spend : 0;
+    card(['roas', 'roas'], roas >= 3 ? 'c-green' : roas >= 1.5 ? 'c-blue' : roas > 0 ? 'c-red' : '', roas > 0 ? fmtD(roas, 2) + 'x' : '—',
+      roas > 0 ? `R$${fmt(vis.fat)} ÷ R$${fmt(totals.spend)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}` : 'Sem investimento no período');
+    const tx = totals.conv > 0 && vis.vendas > 0 ? vis.vendas / totals.conv * 100 : 0;
+    card(['conversao', 'conversao'], tx >= 10 ? 'c-green' : tx >= 5 ? 'c-blue' : tx > 0 ? 'c-red' : '', tx > 0 ? fmtD(tx, 1) + '%' : '—',
+      tx > 0 ? `${vis.vendas} vendas ÷ ${fmtN(totals.conv)} conversas · 1 a cada ${Math.round(totals.conv / vis.vendas)}` : 'Vendas ÷ conversas WhatsApp');
   }
 
-  // Card conversão contato → venda (respeita o filtro de loja: STA/Castelo usam só as vendas da loja)
-  const vendasConv = lojaAtual === 'sta' ? (v.sta.vendas || 0)
-                   : lojaAtual === 'castelo' ? (v.castelo.vendas || 0)
-                   : totalVendas;
-  const txConv = totals.conv > 0 && vendasConv > 0 ? vendasConv / totals.conv * 100 : 0;
-  const cardConv = document.getElementById('card-conversao');
-  if (txConv > 0) {
-    cardConv.className = txConv >= 10 ? 'card c-green' : txConv >= 5 ? 'card c-blue' : 'card c-red';
-    document.getElementById('c-conversao').textContent = txConv.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
-    document.getElementById('c-conversao-sub').textContent =
-      `${vendasConv} vendas ÷ ${fmtN(totals.conv)} conversas · 1 a cada ${Math.round(totals.conv / vendasConv)}`;
-  } else {
-    cardConv.className = 'card';
-    document.getElementById('c-conversao').textContent = '—';
-    document.getElementById('c-conversao-sub').textContent = totals.conv > 0
-      ? 'Registre as vendas via + Vendas'
-      : 'Vendas ÷ conversas WhatsApp';
-  }
-
-  // Botão header
-  document.getElementById('btn-vendas').className = temDados ? 'btn-vendas tem-dados' : 'btn-vendas';
-  document.getElementById('btn-vendas').textContent = temDados ? '✓ Vendas' : '+ Vendas';
+  // Botão "+ Vendas" (só admin): marca o mês de início do período quando já tem vendas
+  const temDados = carregarVendas(chaveVendas()).fatOnline > 0;
+  const btn = document.getElementById('btn-vendas');
+  btn.classList.toggle('tem-dados', temDados);   // classList: preserva o so-admin que esconde do cliente
+  btn.textContent = temDados ? '✓ Vendas' : '+ Vendas';
 }
 
 // ─── HISTÓRICO MENSAL ──────────────────────────────
@@ -2445,7 +2527,7 @@ function salvarHistorico() {
 
 function fmtK(n) {
   n = parseFloat(n || 0);
-  return n >= 1000 ? (n/1000).toFixed(0) + 'k' : fmt(n);
+  return n >= 1000 ? (n/1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k' : fmt(n);
 }
 
 // ─── TABS ─────────────────────────────────────────
@@ -2476,18 +2558,21 @@ async function buscarInvestimentoHistorico() {
   const el = document.getElementById('analise-invest-status');
   if (el) el.textContent = 'Buscando investimentos históricos...';
   try {
-    const resultados = await Promise.all(
-      Object.entries(MESES_RANGES).map(async ([mes, range]) => {
-        const data = await apiGet(`${CFG.account}/insights`, {
-          fields: 'spend,actions',
-          time_range: range,
-          level: 'account',
-        });
-        const row = data?.data?.[0] || {};
-        return { mes, spend: parseFloat(row.spend || 0), conv: extrairAction(row.actions, CONV_ACTION) };
-      })
-    );
-    resultados.forEach(({ mes, spend, conv }) => { investimentoHistorico[mes] = spend; conversasHistorico[mes] = conv; });
+    // Uma consulta só, quebrada por mês (antes: uma por mês — estourava o limite de chamadas do Meta)
+    const meses = Object.keys(MESES_RANGES);
+    const linhas = await paginar(`${CFG.account}/insights`, {
+      fields: 'spend,actions',
+      time_range: { since: MESES_RANGES[meses[0]].since, until: MESES_RANGES[meses[meses.length - 1]].until },
+      time_increment: 'monthly',
+      level: 'account',
+    });
+    meses.forEach(mes => { investimentoHistorico[mes] = 0; conversasHistorico[mes] = 0; });
+    linhas.forEach(row => {
+      const mes = (row.date_start || '').slice(0, 7);
+      if (!(mes in investimentoHistorico)) return;
+      investimentoHistorico[mes] += parseFloat(row.spend || 0);
+      conversasHistorico[mes] += extrairAction(row.actions, CONV_ACTION);
+    });
     if (el) el.textContent = '';
   } catch(e) {
     if (el) el.textContent = 'Não foi possível buscar investimentos históricos.';
@@ -2654,8 +2739,8 @@ function renderRankingMeses() {
   const melhorFat = rows[0].faturamento;
 
   const tbody = rows.map((r, i) => {
-    const convRate  = r.leads > 0 ? ((r.vendas / r.leads) * 100).toFixed(1) + '%' : '—';
-    const roas      = r.invest > 0 ? (r.faturamento / r.invest).toFixed(2) + 'x' : '—';
+    const convRate  = r.leads > 0 ? fmtD(r.vendas / r.leads * 100, 1) + '%' : '—';
+    const roas      = r.invest > 0 ? fmtD(r.faturamento / r.invest, 2) + 'x' : '—';
     const cpv       = r.invest > 0 && r.vendas > 0 ? 'R$' + fmt(r.invest / r.vendas) : '—';
     const cpl       = r.invest > 0 && r.leads > 0  ? 'R$' + fmt(r.invest / r.leads)  : '—';
     const barW      = Math.round((r.faturamento / melhorFat) * 100);
@@ -2689,7 +2774,7 @@ function renderRankingMeses() {
     <div class="table-box">
       <h3>Do melhor ao mais fraco por faturamento total${atualizado}</h3>
       <div style="overflow-x:auto;">
-        <table>
+        <table class="tbl-cards tbl-ranking">
           <thead>
             <tr>
               <th style="text-align:center;">Pos.</th><th>Mês</th>
@@ -2712,6 +2797,17 @@ function renderRankingMeses() {
     </div>`;
   document.getElementById('analise-ranking-meses').innerHTML = html;
   document.getElementById('live-ranking-meses').innerHTML = html;
+  rotularTabelas();
+}
+
+// Celular: as tabelas .tbl-cards viram cartões; cada célula leva o nome da coluna (data-label)
+function rotularTabelas() {
+  document.querySelectorAll('table.tbl-cards').forEach(t => {
+    const nomes = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
+    t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => {
+      if (nomes[i] && !td.hasAttribute('colspan')) td.setAttribute('data-label', nomes[i]);
+    }));
+  });
 }
 
 function renderAnaliseCharts() {
@@ -2820,7 +2916,7 @@ function renderAnaliseCampanhas() {
       <td class="td-r" style="color:var(--t-sub);">R$${fmt(c.gasto)}</td>
       <td class="td-r">${fmtN(c.conv)}</td>
       <td class="td-r" style="color:${cpcColor};font-weight:700;">R$${fmt(c.cpc)}</td>
-      <td class="td-r" style="color:var(--t-sub);">${c.ctr.toFixed(2)}%</td>
+      <td class="td-r" style="color:var(--t-sub);">${fmtD(c.ctr, 2)}%</td>
       <td>${resultado}</td>
     </tr>`;
   }).join('');
@@ -2862,8 +2958,8 @@ function renderAnaliseAdsets() {
       <td class="td-r" style="color:var(--t-sub);">R$${fmt(a.gasto)}</td>
       <td class="td-r">${fmtN(a.conv)}</td>
       <td class="td-r" style="color:${cpcColor};font-weight:700;">R$${fmt(a.cpc)}</td>
-      <td class="td-r" style="color:${freqColor};font-weight:600;">${a.freq.toFixed(1)}x <span style="font-size:10px;">${freqLabel}</span></td>
-      <td class="td-r" style="color:var(--t-sub);">${a.ctr.toFixed(2)}%</td>
+      <td class="td-r" style="color:${freqColor};font-weight:600;">${fmtD(a.freq, 1)}x <span style="font-size:10px;">${freqLabel}</span></td>
+      <td class="td-r" style="color:var(--t-sub);">${fmtD(a.ctr, 2)}%</td>
       <td>${status}</td>
     </tr>`;
   }).join('');
@@ -2900,8 +2996,8 @@ function renderAnaliseCriativos() {
       <td class="td-r" style="color:var(--t-sub);">R$${fmt(a.gasto)}</td>
       <td class="td-r">${fmtN(a.conv)}</td>
       <td class="td-r" style="color:${cpcColor};font-weight:700;">R$${fmt(a.cpc)}</td>
-      <td class="td-r" style="color:var(--t-sub);">${a.ctr.toFixed(2)}%</td>
-      <td class="td-r" style="color:${freqColor};font-weight:600;">${a.freq.toFixed(1)}x</td>
+      <td class="td-r" style="color:var(--t-sub);">${fmtD(a.ctr, 2)}%</td>
+      <td class="td-r" style="color:${freqColor};font-weight:600;">${fmtD(a.freq, 1)}x</td>
       <td>${resultado}</td>
     </tr>`;
   }).join('');

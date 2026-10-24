@@ -28,7 +28,7 @@ $ehDaConta  = (bool) preg_match('#^' . preg_quote($conta, '#') . '/(insights|ads
 $ehAnuncio  = (bool) preg_match('#^\d{5,25}$#', $path);   // prévia (thumbnail) de um anúncio
 if (!$ehDaConta && !$ehAnuncio) falha(403, 'Consulta não permitida');
 
-$permitidos = ['fields', 'time_range', 'level', 'limit', 'after'];
+$permitidos = ['fields', 'time_range', 'time_increment', 'level', 'limit', 'after'];
 $params = [];
 foreach ($permitidos as $p) {
     if (isset($_GET[$p]) && is_string($_GET[$p])) $params[$p] = $_GET[$p];
