@@ -374,6 +374,19 @@ body.theme-light .fstats-lojas{background:#f8fafc;color:#475569;}
 .aviso-comercial{background:#2a1e10;border:1px solid #92400e;color:#fbbf24;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.5;margin-bottom:12px;}
 body.theme-light .aviso-comercial{background:#fffbeb;border-color:#f59e0b;color:#92400e;}
 
+.aviso-comercial.info{background:#12233d;border-color:#1e40af;color:#93c5fd;}
+body.theme-light .aviso-comercial.info{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a;}
+
+/* VENDAS LANÇADAS */
+.linha-semana{cursor:pointer;}
+.linha-semana.sel{background:rgba(59,91,219,0.12);box-shadow:inset 3px 0 0 #3b5bdb;}
+.tbl-semanas tfoot td{padding:10px 16px;font-size:12px;font-weight:700;color:var(--t-text);border-top:1px solid #2d3148;background:#12151e;}
+body.theme-light .tbl-semanas tfoot td{background:#f8fafc;border-top-color:#e2e8f0;}
+.btn-mini{background:transparent;border:1px solid #2d3148;border-radius:6px;color:#94a3b8;cursor:pointer;font-size:12px;padding:3px 7px;margin-left:4px;font-family:inherit;}
+.btn-mini:hover{border-color:#748ffc;color:#748ffc;}
+.modal-aviso{background:#2a1e10;border:1px solid #92400e;color:#fbbf24;border-radius:8px;padding:9px 12px;font-size:12px;line-height:1.5;margin:-10px 0 16px;}
+.modal-aviso div + div{margin-top:6px;}
+
 /* TOP 3 ANÚNCIOS */
 .top-ad{border:1px solid;border-radius:12px;padding:20px;margin-bottom:10px;display:grid;grid-template-columns:110px minmax(0,1fr);grid-template-areas:"thumb info" "thumb metricas";column-gap:20px;row-gap:12px;}
 .top-ad-thumb{grid-area:thumb;width:110px;height:110px;background:#12151e;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2d3148;font-size:32px;}
@@ -395,7 +408,9 @@ body.theme-light .top-ad-camp,body.theme-light .top-ad-metricas .ml{color:#64748
   .logo-area img{width:38px;height:38px;}
   .logo-area h1{font-size:16px;}
   .header-right{width:100%;gap:8px;}
-  .date-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+  .date-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;width:100%;}
+  .date-row .preset-btn{grid-column:span 2;white-space:nowrap;font-size:12.5px;padding:10px 2px;}
+  .date-row label{grid-column:span 3;}
   .date-row > span{display:none;}
   .date-row label{min-width:0;}
   .date-input{width:100%;min-width:0;font-size:16px;padding:8px 10px;}   /* 16px: o iPhone não dá zoom ao tocar */
@@ -430,7 +445,11 @@ body.theme-light .top-ad-camp,body.theme-light .top-ad-metricas .ml{color:#64748
 
   /* tabelas viram cartões (rótulo de cada valor vem do data-label) */
   table.tbl-cards thead{display:none;}
-  table.tbl-cards,table.tbl-cards tbody{display:block;width:100%;}
+  table.tbl-cards,table.tbl-cards tbody,table.tbl-cards tfoot{display:block;width:100%;}
+  .tbl-semanas tfoot td{padding:0!important;background:transparent!important;border:none!important;}
+  .tbl-semanas tfoot tr{background:#12151e;}
+  body.theme-light .tbl-semanas tfoot tr{background:#f8fafc;}
+  .tbl-semanas td.so-admin:empty{display:none;}
   table.tbl-cards tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;padding:13px 14px;}
   table.tbl-cards td{padding:0!important;max-width:none!important;white-space:normal!important;text-align:left!important;font-size:13px;min-width:0;overflow-wrap:anywhere;}
   table.tbl-cards td::before{content:attr(data-label);display:block;font-size:10px;font-weight:600;color:var(--t-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
@@ -800,9 +819,10 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
 <!-- MODAL VENDAS -->
 <div class="modal-overlay" id="modal-vendas">
   <div class="modal-box">
-    <div class="modal-title">Registrar Vendas do Mês</div>
-    <div class="modal-sub">Preencha com os dados passados pelo comercial no fechamento.</div>
+    <div class="modal-title">Lançar vendas do período</div>
+    <div class="modal-sub">Lance a semana (ou o mês inteiro) com os números do comercial. O mês é a soma de todas as semanas lançadas.</div>
     <div class="modal-period" id="modal-period-label">—</div>
+    <div class="modal-aviso" id="modal-aviso" style="display:none;"></div>
 
     <!-- ONLINE -->
     <div class="modal-store" style="background:#12151e;border-radius:10px;padding:16px;margin-bottom:12px;border-left:3px solid #3b5bdb;">
@@ -954,6 +974,8 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
     <div class="header-right">
       <!-- PRESETS -->
       <div class="date-row">
+        <button class="preset-btn" data-preset="sem" onclick="setPreset('sem', true)">Esta semana</button>
+        <button class="preset-btn" data-preset="semant" onclick="setPreset('semant', true)">Semana passada</button>
         <button class="preset-btn" data-preset="7d" onclick="setPreset('7d', true)">7 dias</button>
         <button class="preset-btn" data-preset="30d" onclick="setPreset('30d', true)">30 dias</button>
         <button class="preset-btn" data-preset="mes" onclick="setPreset('mes', true)">Este mês</button>
@@ -1018,6 +1040,24 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
         <div class="card" id="card-cpv"><div class="lbl">Custo por Venda</div><div class="val" id="c-cpv">—</div><div class="sub" id="c-cpv-sub">Investido ÷ total vendas</div></div>
         <div class="card" id="card-roas"><div class="lbl">ROAS</div><div class="val" id="c-roas">—</div><div class="sub" id="c-roas-sub">Fat. total ÷ investimento</div></div>
         <div class="card" id="card-conversao"><div class="lbl">Conversão Contato → Venda</div><div class="val" id="c-conversao">—</div><div class="sub" id="c-conversao-sub">Vendas ÷ conversas WhatsApp</div></div>
+      </div>
+
+      <!-- VENDAS LANÇADAS (por semana / mês) — clicar numa linha filtra o painel por aquele período -->
+      <div class="table-box" id="box-semanas" style="display:none;margin-top:12px;">
+        <h3 id="semanas-titulo">Vendas lançadas</h3>
+        <div style="overflow-x:auto;">
+          <table class="tbl-cards tbl-semanas">
+            <thead>
+              <tr>
+                <th>Período</th><th class="td-r">Faturamento</th><th class="td-r">Vendas</th>
+                <th class="td-r">STA</th><th class="td-r">Castelo</th><th class="td-r">Entrega</th>
+                <th class="td-r">Investimento</th><th class="td-r">ROAS</th><th class="td-r so-admin"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-semanas"></tbody>
+            <tfoot id="tfoot-semanas"></tfoot>
+          </table>
+        </div>
       </div>
 
       <!-- FUNIL -->
@@ -1334,13 +1374,18 @@ async function cifrarDados({ key, salt, iter }, dados) {
 
 // Vendas e histórico: o cliente lê de gmstore_dados.js (decifrado no login), sem tocar no localStorage
 function lerDados(chave) {
-  if (EH_CLIENTE && window.GM_DADOS) return (chave === 'gmstore_vendas' ? GM_DADOS.vendas : GM_DADOS.historico) || {};
+  if (EH_CLIENTE && window.GM_DADOS) {
+    const campo = { gmstore_vendas: 'vendas', gmstore_historico: 'historico', gmstore_lancamentos: 'lancamentos' }[chave];
+    return GM_DADOS[campo] || {};
+  }
   return JSON.parse(localStorage.getItem(chave) || '{}');
 }
 // ─────────────────────────────────────────────────────────────────────────
 let dadosCamp = [];
 let dadosAds = [];
 let dadosAdsStatus = {};
+let dadosDiarios = null;     // investimento/conversas por dia e campanha (meses do período) — vendas por semana
+let periodoCarregado = '';   // 'ini_fim' dos dados do Meta na tela
 let lojaAtual = 'all';
 let charts = {};
 let chartsHist = {};
@@ -1387,7 +1432,7 @@ async function salvarConfig() {
     localStorage.setItem('gmstore_cfg', JSON.stringify(CFG));
     document.getElementById('setup-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant', true);
+    setPreset(presetInicial(), true);
   } catch(e) {
     btn.textContent = 'Salvar e Abrir Dashboard';
     btn.disabled = false;
@@ -1518,7 +1563,7 @@ function abrirDashboardAposLogin() {
       kwCastelo: FIXED_KW_CASTELO || 'CASTELO'
     };
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant', true);
+    setPreset(presetInicial(), true);
     return;
   }
   // Token fixo embutido
@@ -1530,7 +1575,7 @@ function abrirDashboardAposLogin() {
       kwCastelo: FIXED_KW_CASTELO || 'CASTELO'
     };
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant', true);
+    setPreset(presetInicial(), true);
     return;
   }
   // Sem token fixo: verifica localStorage ou abre config
@@ -1538,7 +1583,7 @@ function abrirDashboardAposLogin() {
   if (saved) {
     CFG = JSON.parse(saved);
     document.getElementById('dashboard').style.display = 'block';
-    setPreset('mesant', true);
+    setPreset(presetInicial(), true);
   } else if (EH_CLIENTE) {
     // Cliente nunca vê a configuração
     try { localStorage.removeItem(CHAVE_KEY); } catch (e) {}
@@ -1550,7 +1595,7 @@ function abrirDashboardAposLogin() {
 }
 
 // ─── DATAS ───────────────────────────────────────
-function fmtDate(d) { return d.toISOString().split('T')[0]; }
+function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmtBr(s) { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
 
 function setPreset(p, buscar) {
@@ -1560,6 +1605,10 @@ function setPreset(p, buscar) {
   if (p === '7d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-6); }
   else if (p === '30d') { fim = new Date(hoje); ini = new Date(hoje); ini.setDate(ini.getDate()-29); }
   else if (p === 'mes') { ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1); fim = new Date(hoje); }
+  else if (p === 'sem' || p === 'semant') {   // semana de segunda a domingo
+    ini = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - (hoje.getDay() + 6) % 7 - (p === 'semant' ? 7 : 0));
+    fim = p === 'sem' ? new Date(hoje) : new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6);
+  }
   else if (p === 'mesant') {
     ini = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
     fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
@@ -1567,6 +1616,11 @@ function setPreset(p, buscar) {
   document.getElementById('date-start').value = fmtDate(ini);
   document.getElementById('date-end').value = fmtDate(fim);
   if (buscar) buscarDados();
+}
+
+function presetInicial() {
+  const mes = hojeStr().slice(0, 7);
+  return Object.values(lerLancamentos()).some(l => mesDoLancamento(l) === mes) ? 'mes' : 'mesant';
 }
 
 function setPresetManual() { document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); }
@@ -1658,7 +1712,19 @@ async function buscarDados() {
       statusList.forEach(a => { dadosAdsStatus[a.id] = a.effective_status; });
     } catch(e) { /* status opcional — não bloqueia */ }
 
+    // INVESTIMENTO POR DIA (vendas por semana: ROAS de cada lançamento e dos dias com venda)
+    mostrarLoading(true, 'Buscando investimento por dia...');
+    dadosDiarios = null;
+    try {
+      const hoje = hojeStr(), mesFim = ultimoDiaMes(fim.slice(0, 7));
+      dadosDiarios = await paginar(`${CFG.account}/insights`, {
+        fields: 'campaign_name,spend,actions', level: 'campaign', time_increment: 1, limit: 500,
+        time_range: { since: ini.slice(0, 7) + '-01', until: mesFim < hoje ? mesFim : hoje },
+      });
+    } catch(e) { /* opcional: sem ele, ROAS usa o investimento do período inteiro */ }
+
     mostrarLoading(false);
+    periodoCarregado = `${ini}_${fim}`;
     renderDashboard(ini, fim);
 
   } catch(e) {
@@ -1731,6 +1797,7 @@ function renderDashboard(ini, fim) {
   renderCharts(camp);
   renderAlertas(camp, totals);
   atualizarCardsVendas();
+  renderSemanas();
   renderHistorico();
   if (EH_CLIENTE) {
     renderRankingMeses();
@@ -1776,8 +1843,9 @@ function renderFunil(t) {
   const okV = p.ok && vis.fat > 0;
   const totalVendas = okV ? vis.vendas : 0;
   const agend = okV && lojaAtual === 'all' ? p.agend : 0;   // agendamentos não são separados por loja
+  const tc = okV ? totaisCobertos(p) : t;                     // investimento/conversas dos dias com venda
 
-  const cpvReal = totalVendas > 0 ? t.spend / totalVendas : 0;
+  const cpvReal = totalVendas > 0 ? tc.spend / totalVendas : 0;
   const etapa = (n, bg, rotulo, valor) =>
     `<div class="fv fv${n}"><div class="funnel-bar" style="background:${bg};"><span class="fb-l">${rotulo}</span><span class="fb-v">${valor}</span></div></div>`;
   const ligacao = '<div class="funnel-connector"></div>';
@@ -1793,13 +1861,13 @@ function renderFunil(t) {
       + etapa(5, 'linear-gradient(90deg,#0369a1,#0ea5e9)', 'Agendamentos', fmtN(agend));
   }
   html += ligacao + (totalVendas > 0
-      ? `<div class="funnel-drop fd-ok">↓ ${agend > 0 ? fmtD(totalVendas / agend * 100, 1) + '% dos agendamentos fecharam' : fmtD(totalVendas / conv * 100, 1) + '% das conversas viraram venda'}</div>`
+      ? `<div class="funnel-drop fd-ok">↓ ${agend > 0 ? fmtD(totalVendas / agend * 100, 1) + '% dos agendamentos fecharam' : fmtD(totalVendas / (tc.conv || conv) * 100, 1) + '% das conversas viraram venda'}</div>`
       : `<div class="funnel-drop fd-warn">↓ ${okV ? 'Sem vendas no período' : 'Vendas: veja o aviso em Comercial'}</div>`)
     + ligacao
     + etapa(6, totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#374151,#4b5563)', 'Vendas', totalVendas > 0 ? fmtN(totalVendas) : '—');
   document.getElementById('funil-visual').innerHTML = html;
 
-  const roas = okV && t.spend > 0 ? vis.fat / t.spend : 0;
+  const roas = okV && tc.spend > 0 ? vis.fat / tc.spend : 0;
   const roasColor = roas >= 3 ? '#69db7c' : roas >= 1.5 ? '#748ffc' : '#ff8787';
   const fstat = (cor, rotulo, valor, corValor) =>
     `<div class="fstat" style="border-color:${cor};"><div class="fs-l">${rotulo}</div><div class="fs-v"${corValor ? ` style="color:${corValor};"` : ''}>${valor}</div></div>`;
@@ -2115,15 +2183,34 @@ function carregarVendas(chave) {
   };
 }
 
+function lancamentosSobrepostos(lanc, ini, fim) {
+  return Object.entries(lanc).filter(([k, l]) => k !== `${ini}_${fim}` && l.fim >= ini && l.ini <= fim);
+}
+
 function abrirModalVendas() {
   const ini = document.getElementById('date-start').value;
   const fim = document.getElementById('date-end').value;
-  if (!ini || !fim) { alert('Selecione o período antes de registrar vendas.'); return; }
+  if (!ini || !fim || fim < ini) { alert('Selecione o período (ex.: "Semana passada") antes de lançar as vendas.'); return; }
 
-  const chave = chaveVendas();
-  const v = carregarVendas(chave);
+  const lanc = lerLancamentos();
+  const atual = lanc[`${ini}_${fim}`];
+  const v = atual || { fatOnline: 0, vendasOnline: 0, sta: { vendas: 0, fatTotal: 0 }, castelo: { vendas: 0, fatTotal: 0 } };
+  const dias = diasEntre(ini, fim);
+  document.getElementById('modal-period-label').textContent =
+    `${fmtBr(ini)} → ${fmtBr(fim)} · ${dias} dia${dias > 1 ? 's' : ''}${atual ? ' · editando o lançamento salvo' : ''}`;
 
-  document.getElementById('modal-period-label').textContent = `${fmtBr(ini)} → ${fmtBr(fim)}`;
+  const avisos = [];
+  const sobre = lancamentosSobrepostos(lanc, ini, fim);
+  if (sobre.length) avisos.push(`Este período encosta em ${sobre.length} lançamento(s) já salvo(s) (${sobre.map(([, l]) => fmtCurto(l.ini) + ' a ' + fmtCurto(l.fim)).join(', ')}). Ao salvar, ele(s) será(ão) substituído(s) por este.`);
+  const mes = mesDoLancamento({ ini, fim });
+  const totalAntigo = lerDados('gmstore_vendas')[mes];
+  const mesTemLanc = Object.values(lanc).some(l => mesDoLancamento(l) === mes);
+  if (!mesTemLanc && totalAntigo?.fatOnline > 0)
+    avisos.push(`${nomeMes(mes)} tem um total mensal antigo (R$${fmt(totalAntigo.fatOnline)}). A partir deste lançamento, o mês passa a ser a soma dos lançamentos — inclua todas as semanas do mês.`);
+  const elAviso = document.getElementById('modal-aviso');
+  elAviso.innerHTML = avisos.map(a => `<div>${a}</div>`).join('');
+  elAviso.style.display = avisos.length ? 'block' : 'none';
+
   document.getElementById('v-fat-entrega').value    = fmtMoedaInput(fatEntregaDe(v));
   document.getElementById('v-vendas-online').value  = v.vendasOnline || '';
   document.getElementById('v-sta-fat-total').value  = fmtMoedaInput(v.sta.fatTotal);
@@ -2139,25 +2226,59 @@ function fecharModalVendas() {
 }
 
 function salvarVendas() {
-  const chave = chaveVendas();
-  const all = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+  const ini = document.getElementById('date-start').value;
+  const fim = document.getElementById('date-end').value;
+  const lanc = JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}');
+  const sobre = lancamentosSobrepostos(lanc, ini, fim);
+  if (sobre.length && !confirm(`Substituir ${sobre.length} lançamento(s) que encosta(m) neste período?`)) return;
+  const mesesAfetados = sobre.map(([, l]) => mesDoLancamento(l));
+  sobre.forEach(([k]) => delete lanc[k]);
   const t = lerTotaisModalVendas();
   // fatOnline guarda o faturamento TOTAL (STA + Castelo + Online) — usado no ROAS e nos cards
-  all[chave] = {
+  lanc[`${ini}_${fim}`] = {
+    ini, fim,
     fatOnline:    t.fatTotal,
     fatEntrega:   t.fatEntrega,
     vendasOnline: t.vendasOnline,
     sta:     { fatTotal: t.fatSta, vendas: t.vendasSta },
-    castelo: { fatTotal: t.fatCas, vendas: t.vendasCas }
+    castelo: { fatTotal: t.fatCas, vendas: t.vendasCas },
+    salvoEm: new Date().toISOString(),
   };
-  localStorage.setItem('gmstore_vendas', JSON.stringify(all));
+  salvarLancamentos(lanc, mesesAfetados);
   fecharModalVendas();
-  atualizarCardsVendas();
-  if (dadosCamp.length > 0) {
-    const ini = document.getElementById('date-start').value;
-    const fim = document.getElementById('date-end').value;
-    renderDashboard(ini, fim);
-  }
+  reexibir();
+}
+
+function salvarLancamentos(lanc, mesesAfetados = []) {
+  localStorage.setItem('gmstore_lancamentos', JSON.stringify(lanc));
+  const comLanc = new Set(Object.values(lanc).map(mesDoLancamento));
+  recalcularMesesLancados(lanc, mesesAfetados.filter(m => !comLanc.has(m)));   // mês que ficou sem lançamento some
+}
+
+function excluirLancamento(chave) {
+  const lanc = JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}');
+  const l = lanc[chave];
+  if (!l || !confirm(`Excluir o lançamento de ${fmtBr(l.ini)} a ${fmtBr(l.fim)} (R$${fmt(l.fatOnline)})?`)) return;
+  delete lanc[chave];
+  salvarLancamentos(lanc, [mesDoLancamento(l)]);
+  reexibir();
+}
+
+async function editarLancamento(chave) {
+  const l = lerLancamentos()[chave];
+  if (!l) return;
+  document.getElementById('date-start').value = l.ini;
+  document.getElementById('date-end').value = l.fim;
+  setPresetManual();
+  await buscarDados();
+  abrirModalVendas();
+}
+
+// Redesenha com os dados do Meta já carregados (busca de novo só se o período mudou)
+function reexibir() {
+  const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
+  if (periodoCarregado === `${ini}_${fim}`) renderDashboard(ini, fim);
+  else buscarDados();
 }
 
 // Aceita formato BR: "20.874,84", "20874,84", "20.874" e também "20874.84"
@@ -2210,42 +2331,89 @@ document.querySelectorAll('#modal-vendas input').forEach(inp => {
   });
 });
 
-// Vendas são lançadas por mês fechado: no período só entram meses inteiros (1º ao último dia).
-// Período quebrado (7/30 dias, mês em andamento) não tem venda comparável ao investimento.
+// ─── LANÇAMENTOS DE VENDAS ───────────────────────────────────────────────
+// Cada lançamento cobre um período (uma semana, o mês inteiro ou outro intervalo): chave 'ini_fim'.
+// O total do mês (gmstore_vendas) é a soma dos lançamentos do mês; meses antigos sem lançamento
+// guardam só o total mensal (planilha / "+ Vendas" antigo).
+const DIA_MS = 864e5;
+function dPlus(s, n) { return new Date(Date.parse(s + 'T00:00:00Z') + n * DIA_MS).toISOString().slice(0, 10); }
+function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / DIA_MS) + 1; }
+function ultimoDiaMes(mes) { const [y, m] = mes.split('-').map(Number); return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`; }
+function hojeStr() { return fmtDate(new Date()); }
+function fmtCurto(s) { return s.slice(8, 10) + '/' + s.slice(5, 7); }
+function nomeMes(mes) { return MESES_EXTENSO[+mes.slice(5) - 1] + '/' + mes.slice(2, 4); }
+function mesesEntre(ini, fim) {
+  const out = []; let [y, m] = ini.split('-').map(Number);
+  for (let c = ini.slice(0, 7); c <= fim.slice(0, 7); ) { out.push(c); if (++m > 12) { m = 1; y++; } c = `${y}-${String(m).padStart(2, '0')}`; }
+  return out;
+}
+// Semana que vira o mês conta no mês onde tem mais dias
+function mesDoLancamento(l) {
+  const n = {};
+  for (let d = l.ini; d <= l.fim; d = dPlus(d, 1)) n[d.slice(0, 7)] = (n[d.slice(0, 7)] || 0) + 1;
+  return Object.keys(n).sort((a, b) => n[a] - n[b] || a.localeCompare(b)).pop();
+}
+function lerLancamentos() { return lerDados('gmstore_lancamentos'); }
+
+function vendaVazia() { return { fat: 0, sta: { fat: 0, vendas: 0 }, castelo: { fat: 0, vendas: 0 }, entrega: { fat: 0, vendas: 0 } }; }
+function somarVenda(acc, v) {   // v no formato salvo: fatOnline = total; sta/castelo {fatTotal, vendas}; vendasOnline
+  acc.fat += v.fatOnline || 0;
+  acc.sta.fat += v.sta?.fatTotal || 0;         acc.sta.vendas += v.sta?.vendas || 0;
+  acc.castelo.fat += v.castelo?.fatTotal || 0; acc.castelo.vendas += v.castelo?.vendas || 0;
+  acc.entrega.fat += fatEntregaDe(v);          acc.entrega.vendas += v.vendasOnline || 0;
+  return acc;
+}
+const centavos = n => Math.round(n * 100) / 100;
+
+// Meses com lançamentos: o total do mês é a soma deles (ranking e histórico leem esse total)
+function recalcularMesesLancados(lanc, mesesSemLancamento = []) {
+  const vendas = JSON.parse(localStorage.getItem('gmstore_vendas') || '{}');
+  mesesSemLancamento.forEach(m => delete vendas[m]);
+  const porMes = {};
+  Object.values(lanc).forEach(l => { const m = mesDoLancamento(l); (porMes[m] = porMes[m] || []).push(l); });
+  Object.entries(porMes).forEach(([m, ls]) => {
+    const t = ls.reduce(somarVenda, vendaVazia());
+    vendas[m] = { fatOnline: centavos(t.fat), fatEntrega: centavos(t.entrega.fat), vendasOnline: t.entrega.vendas,
+      sta: { fatTotal: centavos(t.sta.fat), vendas: t.sta.vendas }, castelo: { fatTotal: centavos(t.castelo.fat), vendas: t.castelo.vendas },
+      lancamentos: ls.length };
+  });
+  localStorage.setItem('gmstore_vendas', JSON.stringify(vendas));
+}
+
+// Vendas do período selecionado: lançamentos inteiros dentro dele + meses antigos (só total mensal)
+// inteiros dentro dele. faixas = dias que têm venda lançada (ROAS/custo usam o investimento desses dias)
 function vendasDoPeriodo() {
   const ini = document.getElementById('date-start').value;
   const fim = document.getElementById('date-end').value;
-  const p = { meses: [], semRegistro: [], parcial: false, emAndamento: false, agend: 0, fat: 0,
-              sta: { fat: 0, vendas: 0 }, castelo: { fat: 0, vendas: 0 }, entrega: { fat: 0, vendas: 0 } };
+  const p = Object.assign(vendaVazia(), { faixas: [], lancamentos: 0, cortados: 0, semRegistro: [], mesesParciais: [], semLancamento: false, agend: 0, ok: false, cobreTudo: false, vendas: 0 });
   if (!ini || !fim || fim < ini) return p;
-  const todas = lerDados('gmstore_vendas');
+  const lanc = Object.values(lerLancamentos());
+  const vendas = lerDados('gmstore_vendas');
   const hist = carregarHistorico();
-  const hoje = new Date();
-  const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
-  let [y, m] = ini.split('-').map(Number);
-  for (;;) {
-    const chave = `${y}-${String(m).padStart(2, '0')}`;
-    const primeiro = `${chave}-01`;
-    const ultimo = `${chave}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
-    if (primeiro > fim) break;
-    if (primeiro >= ini && ultimo <= fim) {
-      p.meses.push(chave);
-      const v = todas[chave];
-      if (!v || !(v.fatOnline > 0)) p.semRegistro.push(chave);
-      else {
-        p.fat += v.fatOnline;
-        p.sta.fat += v.sta?.fatTotal || 0;         p.sta.vendas += v.sta?.vendas || 0;
-        p.castelo.fat += v.castelo?.fatTotal || 0; p.castelo.vendas += v.castelo?.vendas || 0;
-        p.entrega.fat += fatEntregaDe(v);          p.entrega.vendas += v.vendasOnline || 0;
-      }
-      p.agend += hist[chave]?.agendamentos || 0;
-    } else {
-      p.parcial = true;
-      if (chave === mesHoje) p.emAndamento = true;
-    }
-    if (++m > 12) { m = 1; y++; }
-  }
-  p.ok = p.meses.length > 0 && !p.parcial && !p.semRegistro.length;
+  const mesesComLanc = new Set(lanc.map(mesDoLancamento));
+  const hoje = hojeStr();
+  lanc.forEach(l => {
+    if (l.ini >= ini && l.fim <= fim) { somarVenda(p, l); p.faixas.push({ ini: l.ini, fim: l.fim }); p.lancamentos++; }
+    else if (l.fim >= ini && l.ini <= fim) p.cortados++;
+  });
+  mesesEntre(ini, fim).forEach(m => {
+    if (mesesComLanc.has(m)) return;            // mês lançado por período: já somado acima
+    const prim = `${m}-01`, ult = ultimoDiaMes(m), v = vendas[m];
+    const temTotal = v && v.fatOnline > 0;
+    if (prim >= ini && ult <= fim) {
+      if (temTotal) { somarVenda(p, v); p.faixas.push({ ini: prim, fim: ult }); p.agend += hist[m]?.agendamentos || 0; }
+      else if (ult < hoje) p.semRegistro.push(m);
+      else p.semLancamento = true;
+    } else if (temTotal) p.mesesParciais.push(m);
+    else if (prim <= hoje) p.semLancamento = true;
+  });
+  p.faixas.sort((a, b) => a.ini.localeCompare(b.ini));
+  p.vendas = p.sta.vendas + p.castelo.vendas + p.entrega.vendas;
+  p.ok = p.faixas.length > 0 && p.fat > 0;
+  let cursor = ini;
+  for (const f of p.faixas) { if (f.ini > cursor) break; if (f.fim >= cursor) cursor = dPlus(f.fim, 1); }
+  p.cobreTudo = p.ok && cursor > (fim < hoje ? fim : hoje);
+  if (!p.cobreTudo) p.agend = 0;                // agendamentos só existem por mês inteiro
   return p;
 }
 
@@ -2256,20 +2424,39 @@ function vendasVisao(p) {
   return { fat: p.fat, vendas: p.sta.vendas + p.castelo.vendas + p.entrega.vendas };
 }
 
+// Investimento e conversas só dos dias com venda lançada — ROAS e custo por venda comparáveis
+function totaisDosDias(faixas) {
+  if (!dadosDiarios) return null;
+  const dentro = d => faixas.some(f => d >= f.ini && d <= f.fim);
+  return somarTotais(filtrarPorLoja(dadosDiarios.filter(r => dentro(r.date_start))));
+}
+function totaisCobertos(p) {
+  if (p.cobreTudo) return Object.assign(somarTotais(filtrarPorLoja(dadosCamp)), { exato: true });
+  const t = totaisDosDias(p.faixas);
+  return t ? Object.assign(t, { exato: true }) : Object.assign(somarTotais(filtrarPorLoja(dadosCamp)), { exato: false });
+}
+
+function faixasTexto(faixas) {
+  const juntas = [];
+  faixas.forEach(f => { const u = juntas[juntas.length - 1]; if (u && f.ini <= dPlus(u.fim, 1)) { if (f.fim > u.fim) u.fim = f.fim; } else juntas.push({ ...f }); });
+  return juntas.map(f => `${fmtCurto(f.ini)} a ${fmtCurto(f.fim)}`).join(', ');
+}
+
 function motivoSemVendas(p) {
-  if (p.emAndamento) return 'Mês em andamento — as vendas entram no fechamento do mês.';
-  if (p.parcial) return 'As vendas são fechadas por mês: escolha um mês completo (ex.: "Mês anterior") para ver faturamento, ROAS e custo por venda.';
+  if (p.mesesParciais.length)
+    return `${p.mesesParciais.map(nomeMes).join(', ')} só tem o total do mês: escolha o mês completo para ver as vendas dele.`;
   if (p.semRegistro.length) {
-    const nomes = p.semRegistro.map(m => MESES_EXTENSO[+m.slice(5) - 1] + '/' + m.slice(2, 4)).join(', ');
-    return EH_CLIENTE ? `Vendas de ${nomes} ainda não informadas.` : `Sem vendas de ${nomes} — registre em "+ Vendas".`;
+    const nomes = p.semRegistro.map(nomeMes).join(', ');
+    return EH_CLIENTE ? `Vendas de ${nomes} ainda não informadas.` : `Sem vendas de ${nomes} — lance em "+ Vendas".`;
   }
-  return '';
+  if (p.cortados) return 'Os lançamentos de venda deste período não cabem inteiros nas datas escolhidas — escolha a semana ou o mês do lançamento (veja "Vendas lançadas").';
+  return EH_CLIENTE ? 'Ainda não há vendas lançadas para este período.' : 'Nenhuma venda lançada neste período — selecione a semana e use "+ Vendas".';
 }
 
 function atualizarCardsVendas() {
   const p = vendasDoPeriodo();
   const vis = vendasVisao(p);
-  const totals = somarTotais(filtrarPorLoja(dadosCamp));
+  const tot = totaisCobertos(p);
   const ok = p.ok && vis.fat > 0;
   const card = (id, cls, val, sub) => {
     document.getElementById('card-' + id[0]).className = 'card' + (cls ? ' ' + cls : '');
@@ -2278,8 +2465,18 @@ function atualizarCardsVendas() {
   };
 
   const aviso = document.getElementById('aviso-comercial');
-  aviso.textContent = ok ? '' : (motivoSemVendas(p) || 'Sem vendas registradas para esta loja no período.');
-  aviso.style.display = ok ? 'none' : 'block';
+  let textoAviso = '', info = false;
+  if (!ok) textoAviso = p.ok ? 'Sem vendas desta loja no período.' : motivoSemVendas(p);
+  else if (!p.cobreTudo) {
+    info = true;
+    textoAviso = `Vendas lançadas de ${faixasTexto(p.faixas)}.` + (tot.exato
+      ? ' Custo por venda, ROAS e conversão usam o investimento e as conversas desses mesmos dias.'
+      : ' (Investimento do período inteiro — não foi possível separar por dia.)')
+      + (p.cortados ? ` ${p.cortados} lançamento(s) que passam das datas escolhidas ficaram de fora.` : '');
+  }
+  aviso.textContent = textoAviso;
+  aviso.className = 'aviso-comercial' + (info ? ' info' : '');
+  aviso.style.display = textoAviso ? 'block' : 'none';
 
   if (!ok) {
     card(['fat-online', 'fat-online'], '', '—', 'STA + Castelo + Entrega');
@@ -2288,30 +2485,102 @@ function atualizarCardsVendas() {
     card(['roas', 'roas'], '', '—', 'Faturamento ÷ investimento');
     card(['conversao', 'conversao'], '', '—', 'Vendas ÷ conversas WhatsApp');
   } else {
-    const nMeses = p.meses.length > 1 ? ` · ${p.meses.length} meses` : '';
+    const nLanc = p.faixas.length > 1 ? ` · ${p.faixas.length} lançamentos` : '';
     const porLoja = lojaAtual === 'all';
     card(['fat-online', 'fat-online'], 'c-green', 'R$' + fmt(vis.fat), porLoja
-      ? `STA R$${fmtK(p.sta.fat)} · Castelo R$${fmtK(p.castelo.fat)}${p.entrega.fat > 0 ? ' · Entrega R$' + fmtK(p.entrega.fat) : ''}${nMeses}`
-      : `Loja ${lojaAtual === 'sta' ? 'STA' : 'Castelo'}${nMeses}`);
+      ? `STA R$${fmtK(p.sta.fat)} · Castelo R$${fmtK(p.castelo.fat)}${p.entrega.fat > 0 ? ' · Entrega R$' + fmtK(p.entrega.fat) : ''}${nLanc}`
+      : `Loja ${lojaAtual === 'sta' ? 'STA' : 'Castelo'}${nLanc}`);
     card(['vendas-loja', 'vendas'], vis.vendas > 0 ? 'c-green' : '', vis.vendas + (vis.vendas === 1 ? ' venda' : ' vendas'), porLoja
       ? `STA ${p.sta.vendas} · Castelo ${p.castelo.vendas} · Entrega ${p.entrega.vendas}`
       : `Ticket médio R$${fmt(vis.vendas > 0 ? vis.fat / vis.vendas : 0)}`);
-    const cpv = vis.vendas > 0 ? totals.spend / vis.vendas : 0;
+    const cpv = vis.vendas > 0 ? tot.spend / vis.vendas : 0;
     card(['cpv', 'cpv'], cpv > 0 ? 'c-blue' : '', cpv > 0 ? 'R$' + fmt(cpv) : '—',
-      cpv > 0 ? `R$${fmt(totals.spend)} ÷ ${vis.vendas} vendas` : 'Investido ÷ total de vendas');
-    const roas = totals.spend > 0 ? vis.fat / totals.spend : 0;
+      cpv > 0 ? `R$${fmt(tot.spend)} ÷ ${vis.vendas} vendas` : 'Investido ÷ total de vendas');
+    const roas = tot.spend > 0 ? vis.fat / tot.spend : 0;
     card(['roas', 'roas'], roas >= 3 ? 'c-green' : roas >= 1.5 ? 'c-blue' : roas > 0 ? 'c-red' : '', roas > 0 ? fmtD(roas, 2) + 'x' : '—',
-      roas > 0 ? `R$${fmt(vis.fat)} ÷ R$${fmt(totals.spend)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}` : 'Sem investimento no período');
-    const tx = totals.conv > 0 && vis.vendas > 0 ? vis.vendas / totals.conv * 100 : 0;
+      roas > 0 ? `R$${fmt(vis.fat)} ÷ R$${fmt(tot.spend)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}` : 'Sem investimento nesses dias');
+    const tx = tot.conv > 0 && vis.vendas > 0 ? vis.vendas / tot.conv * 100 : 0;
     card(['conversao', 'conversao'], tx >= 10 ? 'c-green' : tx >= 5 ? 'c-blue' : tx > 0 ? 'c-red' : '', tx > 0 ? fmtD(tx, 1) + '%' : '—',
-      tx > 0 ? `${vis.vendas} vendas ÷ ${fmtN(totals.conv)} conversas · 1 a cada ${Math.round(totals.conv / vis.vendas)}` : 'Vendas ÷ conversas WhatsApp');
+      tx > 0 ? `${vis.vendas} vendas ÷ ${fmtN(tot.conv)} conversas · 1 a cada ${Math.round(tot.conv / vis.vendas)}` : 'Vendas ÷ conversas WhatsApp');
   }
 
-  // Botão "+ Vendas" (só admin): marca o mês de início do período quando já tem vendas
-  const temDados = carregarVendas(chaveVendas()).fatOnline > 0;
+  // Botão "+ Vendas" (só admin): marca quando o período selecionado já tem lançamento
+  const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
+  const temDados = !!lerLancamentos()[`${ini}_${fim}`];
   const btn = document.getElementById('btn-vendas');
   btn.classList.toggle('tem-dados', temDados);   // classList: preserva o so-admin que esconde do cliente
   btn.textContent = temDados ? '✓ Vendas' : '+ Vendas';
+}
+
+// Tabela "Vendas lançadas": lançamentos dos meses do período, com investimento e ROAS de cada um
+function renderSemanas() {
+  const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
+  const box = document.getElementById('box-semanas');
+  if (!ini || !fim) { box.style.display = 'none'; return; }
+  const meses = mesesEntre(ini, fim);
+  const todos = lerLancamentos();
+  const mesesComLanc = new Set(Object.values(todos).map(mesDoLancamento));
+  const vendas = lerDados('gmstore_vendas');
+  const linhas = Object.entries(todos).filter(([, l]) => meses.includes(mesDoLancamento(l)))
+    .map(([chave, l]) => ({ chave, ini: l.ini, fim: l.fim, v: l }));
+  meses.forEach(m => { if (!mesesComLanc.has(m) && vendas[m]?.fatOnline > 0) linhas.push({ chave: null, ini: `${m}-01`, fim: ultimoDiaMes(m), v: vendas[m], mensal: true }); });
+  linhas.sort((a, b) => a.ini.localeCompare(b.ini));
+
+  const loja = lojaAtual === 'sta' ? ' · Loja STA' : lojaAtual === 'castelo' ? ' · Loja Castelo' : '';
+  document.getElementById('semanas-titulo').textContent = `Vendas lançadas — ${meses.map(nomeMes).join(', ')}${loja}`;
+  if (!linhas.length) {
+    box.style.display = EH_CLIENTE ? 'none' : 'block';
+    document.getElementById('tbody-semanas').innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--t-dim);padding:18px;">Nenhuma venda lançada em ${meses.map(nomeMes).join(', ')}. Selecione a semana (ex.: "Semana passada") e clique em "+ Vendas".</td></tr>`;
+    document.getElementById('tfoot-semanas').innerHTML = '';
+    return;
+  }
+  box.style.display = 'block';
+
+  const total = vendaVazia(); let totInv = 0, invOk = !!dadosDiarios;
+  const roasTxt = (fat, inv) => inv > 0 ? fmtD(fat / inv, 2) + 'x' : '—';
+  const corRoas = (fat, inv) => inv > 0 ? (fat / inv >= 3 ? 'var(--t-green)' : fat / inv >= 1.5 ? 'var(--t-blue)' : 'var(--t-red)') : 'var(--t-dim)';
+  document.getElementById('tbody-semanas').innerHTML = linhas.map(r => {
+    const t = somarVenda(vendaVazia(), r.v);
+    somarVenda(total, r.v);
+    const vis = vendasVisao(t);
+    const inv = totaisDosDias([{ ini: r.ini, fim: r.fim }])?.spend;
+    if (inv != null) totInv += inv;
+    const sel = r.ini >= ini && r.fim <= fim;
+    const rotulo = r.mensal ? `${nomeMes(r.ini.slice(0, 7))} — total do mês` : `${fmtCurto(r.ini)} a ${fmtCurto(r.fim)}${diasEntre(r.ini, r.fim) === 7 ? ' · semana' : ''}`;
+    const acoes = r.chave && !EH_CLIENTE
+      ? `<button class="btn-mini" title="Editar" onclick="event.stopPropagation();editarLancamento('${r.chave}')">✎</button><button class="btn-mini" title="Excluir" onclick="event.stopPropagation();excluirLancamento('${r.chave}')">🗑</button>` : '';
+    return `<tr class="linha-semana${sel ? ' sel' : ''}" title="Ver só este período" onclick="filtrarPeriodo('${r.ini}','${r.fim}')">
+      <td style="color:var(--t-text);font-weight:600;">${rotulo}</td>
+      <td class="td-r" style="color:var(--t-green);font-weight:700;">R$${fmt(vis.fat)}</td>
+      <td class="td-r">${vis.vendas}</td>
+      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.sta.fat)} · ${t.sta.vendas}</td>
+      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.castelo.fat)} · ${t.castelo.vendas}</td>
+      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.entrega.fat)} · ${t.entrega.vendas}</td>
+      <td class="td-r" style="color:var(--t-sub);">${inv != null ? 'R$' + fmt(inv) : '—'}</td>
+      <td class="td-r" style="color:${corRoas(vis.fat, inv)};font-weight:700;">${inv != null ? roasTxt(vis.fat, inv) : '—'}</td>
+      <td class="td-r so-admin">${acoes}</td>
+    </tr>`;
+  }).join('');
+  const visT = vendasVisao(total);
+  document.getElementById('tfoot-semanas').innerHTML = `<tr class="linha-total">
+      <td>Total${linhas.length > 1 ? ` (${linhas.length} lançamentos)` : ''}</td>
+      <td class="td-r">R$${fmt(visT.fat)}</td>
+      <td class="td-r">${visT.vendas}</td>
+      <td class="td-r">R$${fmt(total.sta.fat)} · ${total.sta.vendas}</td>
+      <td class="td-r">R$${fmt(total.castelo.fat)} · ${total.castelo.vendas}</td>
+      <td class="td-r">R$${fmt(total.entrega.fat)} · ${total.entrega.vendas}</td>
+      <td class="td-r">${invOk ? 'R$' + fmt(totInv) : '—'}</td>
+      <td class="td-r" style="color:${corRoas(visT.fat, totInv)};">${invOk ? roasTxt(visT.fat, totInv) : '—'}</td>
+      <td class="td-r so-admin"></td>
+    </tr>`;
+  rotularTabelas();
+}
+
+function filtrarPeriodo(ini, fim) {
+  document.getElementById('date-start').value = ini;
+  document.getElementById('date-end').value = fim;
+  setPresetManual();
+  buscarDados();
 }
 
 // ─── HISTÓRICO MENSAL ──────────────────────────────
@@ -2726,7 +2995,7 @@ function renderRankingMeses() {
   const meses = mesesAtivos(hist);
   const rows = meses
     .map(m => ({
-      mes: m, label: MESES_PT[m], ...hist[m],
+      mes: m, label: MESES_PT[m] + (m === hojeStr().slice(0, 7) ? ' (parcial)' : ''), ...hist[m],
       invest: investimentoHistorico[m] || 0,
     }))
     .filter(r => r.faturamento > 0)
@@ -2807,7 +3076,7 @@ function renderRankingMeses() {
 function rotularTabelas() {
   document.querySelectorAll('table.tbl-cards').forEach(t => {
     const nomes = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
-    t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => {
+    t.querySelectorAll('tbody tr, tfoot tr').forEach(tr => [...tr.children].forEach((td, i) => {
       if (nomes[i] && !td.hasAttribute('colspan')) td.setAttribute('data-label', nomes[i]);
     }));
   });
@@ -3015,6 +3284,7 @@ async function exportarDadosCliente() {
     geradoEm:  new Date().toISOString(),
     vendas:    JSON.parse(localStorage.getItem('gmstore_vendas') || '{}'),
     historico: JSON.parse(localStorage.getItem('gmstore_historico') || '{}'),
+    lancamentos: JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}'),
   };
   const pacote = await cifrarDados(CHAVE, dados);
   const conteudo = '// Gerado pelo dashboard admin GM Store em ' + new Date().toLocaleString('pt-BR') + '\n'
@@ -3068,8 +3338,12 @@ function prepararDadosAdmin() {
       const h = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
       localStorage.setItem('gmstore_vendas', JSON.stringify(Object.assign(v, pub.vendas || {})));
       localStorage.setItem('gmstore_historico', JSON.stringify(Object.assign(h, pub.historico || {})));
+      const l = JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}');
+      localStorage.setItem('gmstore_lancamentos', JSON.stringify(Object.assign(l, pub.lancamentos || {})));
       localStorage.setItem('gmstore_dados_aplicado', pub.geradoEm);
     }
+    // Meses lançados por semana: o total vem da soma (a planilha acima não sobrepõe)
+    recalcularMesesLancados(JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}'));
   }
 }
 
