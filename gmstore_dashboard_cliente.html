@@ -384,6 +384,9 @@ body.theme-light .aviso-comercial.info{background:#eff6ff;border-color:#93c5fd;c
 body.theme-light .tbl-semanas tfoot td{background:#f8fafc;border-top-color:#e2e8f0;}
 .btn-mini{background:transparent;border:1px solid #2d3148;border-radius:6px;color:#94a3b8;cursor:pointer;font-size:12px;padding:3px 7px;margin-left:4px;font-family:inherit;}
 .btn-mini:hover{border-color:#748ffc;color:#748ffc;}
+.btn-publicar{border-color:#3b5bdb!important;color:#748ffc!important;}
+.status-publicacao{font-size:11px;color:var(--t-dim);white-space:nowrap;}
+.status-publicacao.ok{color:#69db7c;} .status-publicacao.erro{color:#fbbf24;}
 .modal-aviso{background:#2a1e10;border:1px solid #92400e;color:#fbbf24;border-radius:8px;padding:9px 12px;font-size:12px;line-height:1.5;margin:-10px 0 16px;}
 .modal-aviso div + div{margin-top:6px;}
 
@@ -1001,7 +1004,9 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
       <button class="btn-analise so-admin" id="btn-toggle-analise" onclick="toggleAnalise()">📝 Análise</button>
       <button class="btn-export" onclick="window.print()">⬇ PDF</button>
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()">☀ Claro</button>
-      <button class="btn-settings so-admin" onclick="exportarDadosCliente()" title="Baixa gmstore_dados.js cifrado com as vendas — suba no GitHub no lugar do anterior">⬇ Dados cliente</button>
+      <button class="btn-settings btn-publicar so-admin" id="btn-publicar" onclick="publicarVendas()" title="Publica as vendas (cifradas) — o cliente vê ao abrir/atualizar o painel">☁ Publicar</button>
+      <span class="status-publicacao so-admin" id="status-publicacao"></span>
+      <button class="btn-settings so-admin" onclick="exportarDadosCliente()" title="Baixa um backup do gmstore_dados.js cifrado">⬇ Backup</button>
       <button class="btn-settings so-admin" onclick="abrirConfig()">⚙ Config</button>
       <button class="btn-settings" id="btn-sair" onclick="sairLogin()" title="Sair e esquecer a senha neste navegador">⎋ Sair</button>
     </div>
@@ -1303,7 +1308,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
 
 </div><!-- /dashboard -->
 
-<!-- Vendas publicadas (botão "⬇ Dados cliente"); se faltar, o painel usa só o localStorage -->
+<!-- Vendas do site (base); a versão publicada pelo admin (api/dados) entra por cima se for mais nova -->
 <script src="gmstore_dados.js"></script>
 <script>
 // ─── CONFIG ───────────────────────────────────────
@@ -1338,7 +1343,10 @@ const CHAVE_KEY = EH_CLIENTE ? 'gmstore_chave' : 'gmstore_chave_admin';
 // Senha própria do admin: k = chave dos dados XOR PBKDF2(senha admin, salt). Senha errada gera chave
 // errada e a decifragem do gmstore_dados.js falha. Regerar se a senha do cliente (salt dos dados) mudar.
 const ADMIN_COFRE = {"salt": "wo1UgzT+2qD9+BZNDjNQrA==", "iter": 600000, "k": "mcdqhE6t9E0Z3Kn751aL6n+2BSp0W/eWmLsrDi8qn9M="};
-let CHAVE = null;                  // { key: CryptoKey, salt, iter } depois do login — usada no "⬇ Dados cliente"
+let CHAVE = null;                  // { key: CryptoKey, salt, iter } depois do login — cifra o que o admin publica
+// Publicação: api/dados.js na Vercel guarda as vendas cifradas (admin publica, admin e cliente leem)
+const DADOS_URL = 'https://gmstore-relatorio.vercel.app/api/dados';
+let ADMIN_PROVA = '';              // sha256 do segredo da senha do admin — o servidor confere ao publicar
 
 function paraB64(bytes) {
   bytes = new Uint8Array(bytes);
@@ -1347,6 +1355,7 @@ function paraB64(bytes) {
   return btoa(s);
 }
 function deB64(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+function paraHex(buf) { return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join(''); }
 
 async function derivarChave(senha, salt, iter) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
@@ -1359,6 +1368,7 @@ async function chaveDoAdmin(senha) {
   const pad = new Uint8Array(await crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt: deB64(ADMIN_COFRE.salt), iterations: ADMIN_COFRE.iter, hash: 'SHA-256' }, base, 256));
   const k = deB64(ADMIN_COFRE.k).map((b, i) => b ^ pad[i]);
+  ADMIN_PROVA = paraHex(await crypto.subtle.digest('SHA-256', pad));
   return crypto.subtle.importKey('raw', k, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
 }
 async function decifrarDados(key, pacote) {
@@ -1503,7 +1513,7 @@ async function fazerLogin() {
     try {
       if (document.getElementById('input-lembrar').checked) {
         const raw = paraB64(await crypto.subtle.exportKey('raw', chave.key));
-        localStorage.setItem(CHAVE_KEY, JSON.stringify({ k: raw, salt: chave.salt, iter: chave.iter }));
+        localStorage.setItem(CHAVE_KEY, JSON.stringify({ k: raw, salt: chave.salt, iter: chave.iter, prova: EH_CLIENTE ? undefined : ADMIN_PROVA }));
       } else localStorage.removeItem(CHAVE_KEY);
     } catch (e) {}
   } catch (e) {
@@ -1541,6 +1551,7 @@ async function carregarConfig() {
     const pacote = window.GM_DADOS_CRIPTO;
     if (salvo && pacote && salvo.salt === pacote.salt) {
       const key = await crypto.subtle.importKey('raw', deB64(salvo.k), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
+      if (!EH_CLIENTE) ADMIN_PROVA = salvo.prova || '';   // logins lembrados antes da publicação: pede a senha ao publicar
       await desbloquear({ key, salt: salvo.salt, iter: salvo.iter });
       return;
     }
@@ -2247,6 +2258,7 @@ function salvarVendas() {
   salvarLancamentos(lanc, mesesAfetados);
   fecharModalVendas();
   reexibir();
+  publicarVendas(true);
 }
 
 function salvarLancamentos(lanc, mesesAfetados = []) {
@@ -2262,6 +2274,7 @@ function excluirLancamento(chave) {
   delete lanc[chave];
   salvarLancamentos(lanc, [mesDoLancamento(l)]);
   reexibir();
+  publicarVendas(true);
 }
 
 async function editarLancamento(chave) {
@@ -3275,18 +3288,68 @@ function renderAnaliseCriativos() {
   }).join('');
 }
 
-// ─── EXPORTAR DADOS PARA A VERSÃO DO CLIENTE ─────────
-// Gera gmstore_dados.js cifrado com a senha do login (vendas + histórico deste navegador).
-// Suba no GitHub/Hostinger no lugar do anterior — admin e cliente leem desse arquivo
-async function exportarDadosCliente() {
-  if (!CHAVE) { alert('Entre com a senha antes de exportar.'); return; }
-  const dados = {
+// ─── PUBLICAR VENDAS (admin) / LER PUBLICADO (admin e cliente) ─────────
+async function carregarPacotePublicado() {
+  try {
+    const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(DADOS_URL, { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) return;
+    const pub = await r.json();
+    const atual = window.GM_DADOS_CRIPTO;
+    if (pub?.dados && (!atual || (pub.geradoEm || '') > (atual.geradoEm || ''))) window.GM_DADOS_CRIPTO = pub;
+  } catch (e) { /* sem rede/servidor: segue com o gmstore_dados.js do site */ }
+}
+
+function pacoteDosDados() {
+  return {
     geradoEm:  new Date().toISOString(),
     vendas:    JSON.parse(localStorage.getItem('gmstore_vendas') || '{}'),
     historico: JSON.parse(localStorage.getItem('gmstore_historico') || '{}'),
     lancamentos: JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}'),
   };
-  const pacote = await cifrarDados(CHAVE, dados);
+}
+
+function statusPublicacao(texto, tipo) {
+  const el = document.getElementById('status-publicacao');
+  if (!el) return;
+  el.textContent = texto;
+  el.className = 'status-publicacao' + (tipo ? ' ' + tipo : '');
+}
+
+// Cifra as vendas deste navegador e publica — o cliente vê na próxima vez que abrir/atualizar
+async function publicarVendas(automatico) {
+  if (EH_CLIENTE || !CHAVE) return;
+  if (!ADMIN_PROVA) {
+    const senha = prompt('Para publicar as vendas, confirme a senha do admin:');
+    if (!senha) { statusPublicacao('Não publicado', 'erro'); return; }
+    try { await chaveDoAdmin(senha); } catch (e) {}
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_KEY) || 'null');
+    if (salvo) localStorage.setItem(CHAVE_KEY, JSON.stringify(Object.assign(salvo, { prova: ADMIN_PROVA })));
+  }
+  statusPublicacao('☁ Publicando…');
+  try {
+    const dados = pacoteDosDados();
+    const pacote = Object.assign(await cifrarDados(CHAVE, dados), { geradoEm: dados.geradoEm });
+    const r = await fetch(DADOS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-GM-Admin': ADMIN_PROVA }, body: JSON.stringify(pacote) });
+    const resp = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(resp.error?.message || 'Falha ao publicar');
+    localStorage.setItem('gmstore_dados_aplicado', dados.geradoEm);   // este navegador já tem esses dados
+    window.GM_DADOS_CRIPTO = pacote;
+    statusPublicacao('☁ Publicado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), 'ok');
+  } catch (e) {
+    if (/admin/i.test(e.message)) ADMIN_PROVA = '';
+    statusPublicacao('⚠ Não publicado — clique em ☁ Publicar', 'erro');
+    if (!automatico) alert('Não foi possível publicar as vendas: ' + e.message);
+  }
+}
+
+// ─── EXPORTAR DADOS PARA A VERSÃO DO CLIENTE (backup em arquivo) ─────────
+// Gera gmstore_dados.js cifrado com a senha do login (vendas + histórico deste navegador).
+// Suba no GitHub/Hostinger no lugar do anterior — admin e cliente leem desse arquivo
+async function exportarDadosCliente() {
+  if (!CHAVE) { alert('Entre com a senha antes de exportar.'); return; }
+  const dados = pacoteDosDados();
+  const pacote = Object.assign(await cifrarDados(CHAVE, dados), { geradoEm: dados.geradoEm });
   const conteudo = '// Gerado pelo dashboard admin GM Store em ' + new Date().toLocaleString('pt-BR') + '\n'
                  + '// Vendas cifradas (AES-GCM) — só abrem com a senha do painel\n'
                  + 'window.GM_DADOS_CRIPTO = ' + JSON.stringify(pacote) + ';\n';
@@ -3338,8 +3401,11 @@ function prepararDadosAdmin() {
       const h = JSON.parse(localStorage.getItem('gmstore_historico') || '{}');
       localStorage.setItem('gmstore_vendas', JSON.stringify(Object.assign(v, pub.vendas || {})));
       localStorage.setItem('gmstore_historico', JSON.stringify(Object.assign(h, pub.historico || {})));
-      const l = JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}');
-      localStorage.setItem('gmstore_lancamentos', JSON.stringify(Object.assign(l, pub.lancamentos || {})));
+      // Junta os dois lados sem perder nada: no mesmo período vale o lançamento salvo por último
+      const locais = JSON.parse(localStorage.getItem('gmstore_lancamentos') || '{}');
+      const juntos = Object.assign({}, locais);
+      Object.entries(pub.lancamentos || {}).forEach(([k, l]) => { if (!juntos[k] || (l.salvoEm || '') > (juntos[k].salvoEm || '')) juntos[k] = l; });
+      localStorage.setItem('gmstore_lancamentos', JSON.stringify(juntos));
       localStorage.setItem('gmstore_dados_aplicado', pub.geradoEm);
     }
     // Meses lançados por semana: o total vem da soma (a planilha acima não sobrepõe)
@@ -3371,7 +3437,7 @@ window.onload = () => {
   // Carrega textos de análise
   carregarTextos();
   // Por último: com login lembrado, abre o dashboard direto (mesmo fluxo do clique em "Entrar")
-  carregarConfig();
+  carregarPacotePublicado().finally(carregarConfig);
 };
 
 // ─── ANÁLISE & PLANO DE AÇÃO ─────────────────────────

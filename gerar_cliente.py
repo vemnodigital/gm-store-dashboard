@@ -60,8 +60,10 @@ if senha_proxy and conta:
         (pasta / 'api').mkdir(parents=True, exist_ok=True)
         SAIDAS = [pasta / 'index.html']
         shutil.copy(DIR / 'gmstore_dados.js', pasta / 'gmstore_dados.js')
-        shutil.copy(DIR / 'servidor' / 'vercel' / 'api' / 'meta.js', pasta / 'api' / 'meta.js')
-        print('Intermediário Vercel: vercel/ com index.html, gmstore_dados.js, api/meta.js')
+        for funcao in (DIR / 'servidor' / 'vercel' / 'api').glob('*.js'):   # meta.js (Meta) + dados.js (publicar vendas)
+            shutil.copy(funcao, pasta / 'api' / funcao.name)
+        shutil.copy(DIR / 'servidor' / 'vercel' / 'package.json', pasta / 'package.json')
+        print('Intermediário Vercel: vercel/ com index.html, gmstore_dados.js, api/meta.js, api/dados.js, package.json')
         print(f'Variáveis de ambiente: GM_CONTA={conta}  GM_AUTH={auth}  (+ GM_TOKEN, cadastrado na Vercel)')
         for saida in SAIDAS:
             saida.write_text(html, encoding='utf-8')
