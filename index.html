@@ -387,6 +387,15 @@ body.theme-light .tbl-semanas tfoot td{background:#f8fafc;border-top-color:#e2e8
 .btn-publicar{border-color:#3b5bdb!important;color:#748ffc!important;}
 .status-publicacao{font-size:11px;color:var(--t-dim);white-space:nowrap;}
 .status-publicacao.ok{color:#69db7c;} .status-publicacao.erro{color:#fbbf24;}
+
+/* COMPARATIVO */
+.delta{font-size:11.5px;font-weight:700;margin-top:6px;line-height:1.3;}
+.delta.bom{color:#69db7c;} .delta.ruim{color:#ff8787;} .delta.neutro{color:#94a3b8;font-weight:600;}
+body.theme-light .delta.bom{color:#15803d;} body.theme-light .delta.ruim{color:#b91c1c;} body.theme-light .delta.neutro{color:#64748b;}
+.header-compare{display:block;font-size:11px;color:#748ffc;margin-top:1px;}
+.btn-comparar.active{border-color:#748ffc;color:#748ffc;background:#1e2a4a;}
+body.theme-light .btn-comparar.active{background:#eef2ff;}
+@media print{ .btn-comparar{display:none!important;} .delta.bom{color:#15803d!important;} .delta.ruim{color:#b91c1c!important;} }
 .modal-aviso{background:#2a1e10;border:1px solid #92400e;color:#fbbf24;border-radius:8px;padding:9px 12px;font-size:12px;line-height:1.5;margin:-10px 0 16px;}
 .modal-aviso div + div{margin-top:6px;}
 
@@ -418,7 +427,8 @@ body.theme-light .top-ad-camp,body.theme-light .top-ad-metricas .ml{color:#64748
   .date-row label{min-width:0;}
   .date-input{width:100%;min-width:0;font-size:16px;padding:8px 10px;}   /* 16px: o iPhone não dá zoom ao tocar */
   .preset-btn{padding:10px 6px;font-size:13px;}
-  .btn-fetch{grid-column:1/-1;padding:12px;font-size:14px;}
+  .btn-fetch{grid-column:span 4;padding:12px;font-size:14px;}
+  .date-row .btn-comparar{grid-column:span 2;}
   .store-filter{width:100%;}
   .store-btn{flex:1;padding:10px 6px;font-size:13px;}
   header .btn-export,header .btn-theme,header .btn-settings,header .btn-vendas,header .btn-analise{flex:1 1 auto;padding:10px 12px;font-size:13px;}
@@ -972,6 +982,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
       <div>
         <h1>GM Store</h1>
         <span id="header-period">Selecione um período</span>
+        <span id="header-compare" class="header-compare" style="display:none;"></span>
       </div>
     </div>
     <div class="header-right">
@@ -993,6 +1004,7 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
           <input type="date" id="date-end" class="date-input" onchange="setPresetManual()"/>
         </label>
         <button class="btn-fetch" id="btn-fetch" onclick="buscarDados()">Buscar</button>
+        <button class="preset-btn btn-comparar" id="btn-comparar" onclick="alternarComparar()" title="Mostra em cada indicador quanto subiu ou caiu em relação ao período anterior">⇄ Comparar</button>
       </div>
       <!-- LOJAS -->
       <div class="store-filter">
@@ -1396,6 +1408,10 @@ let dadosAds = [];
 let dadosAdsStatus = {};
 let dadosDiarios = null;     // investimento/conversas por dia e campanha (meses do período) — vendas por semana
 let periodoCarregado = '';   // 'ini_fim' dos dados do Meta na tela
+// Comparativo com o período anterior (ligado por padrão; preferência guardada no navegador)
+let comparar = (() => { try { return localStorage.getItem('gmstore_comparar') !== '0'; } catch (e) { return true; } })();
+let dadosCampAnt = null, dadosDiariosAnt = null, periodoAnt = null;
+const previasAnuncios = {};   // ad_id → miniatura (por sessão)
 let lojaAtual = 'all';
 let charts = {};
 let chartsHist = {};
@@ -1734,6 +1750,24 @@ async function buscarDados() {
       });
     } catch(e) { /* opcional: sem ele, ROAS usa o investimento do período inteiro */ }
 
+    // PERÍODO ANTERIOR (comparativo): campanhas + investimento por dia
+    dadosCampAnt = null; dadosDiariosAnt = null; periodoAnt = null;
+    if (comparar) {
+      mostrarLoading(true, 'Buscando o período anterior...');
+      try {
+        const pa = periodoAnterior(ini, fim);
+        dadosCampAnt = await paginar(`${CFG.account}/insights`, { fields: camposCamp, time_range: { since: pa.ini, until: pa.fim }, level: 'campaign', limit: 100 });
+        const vAnt = vendasDoPeriodo(pa.ini, pa.fim);
+        if (vAnt.ok && !vAnt.cobreTudo) try {
+          dadosDiariosAnt = await paginar(`${CFG.account}/insights`, {
+            fields: 'campaign_name,spend,actions', level: 'campaign', time_increment: 1, limit: 500,
+            time_range: { since: pa.ini.slice(0, 7) + '-01', until: ultimoDiaMes(pa.fim.slice(0, 7)) },
+          });
+        } catch (e) { /* sem ele, ROAS anterior usa o investimento do período inteiro */ }
+        periodoAnt = pa;
+      } catch (e) { dadosCampAnt = null; /* comparativo é opcional — não bloqueia o painel */ }
+    }
+
     mostrarLoading(false);
     periodoCarregado = `${ini}_${fim}`;
     renderDashboard(ini, fim);
@@ -1809,6 +1843,7 @@ function renderDashboard(ini, fim) {
   renderAlertas(camp, totals);
   atualizarCardsVendas();
   renderSemanas();
+  renderComparativo();
   renderHistorico();
   if (EH_CLIENTE) {
     renderRankingMeses();
@@ -2066,8 +2101,11 @@ async function renderTopAd(ads) {
   top3.forEach(async (ad, i) => {
     if (!ad.ad_id || !CFG.token) return;
     try {
-      const data = await apiGet(ad.ad_id, { fields: 'creative{thumbnail_url,image_url}' });
-      const thumb = data?.creative?.thumbnail_url || data?.creative?.image_url;
+      if (!(ad.ad_id in previasAnuncios)) {
+        const data = await apiGet(ad.ad_id, { fields: 'creative{thumbnail_url,image_url}' });
+        previasAnuncios[ad.ad_id] = data?.creative?.thumbnail_url || data?.creative?.image_url || '';
+      }
+      const thumb = previasAnuncios[ad.ad_id];
       const thumbEl = document.getElementById(`top-ad-thumb-${i}`);
       if (thumb && thumbEl) {
         thumbEl.innerHTML = `<img src="${thumb}" alt="" onerror="this.parentElement.innerHTML='<span>🖼️</span>'"/>`;
@@ -2395,9 +2433,7 @@ function recalcularMesesLancados(lanc, mesesSemLancamento = []) {
 
 // Vendas do período selecionado: lançamentos inteiros dentro dele + meses antigos (só total mensal)
 // inteiros dentro dele. faixas = dias que têm venda lançada (ROAS/custo usam o investimento desses dias)
-function vendasDoPeriodo() {
-  const ini = document.getElementById('date-start').value;
-  const fim = document.getElementById('date-end').value;
+function vendasDoPeriodo(ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value) {
   const p = Object.assign(vendaVazia(), { faixas: [], lancamentos: 0, cortados: 0, semRegistro: [], mesesParciais: [], semLancamento: false, agend: 0, ok: false, cobreTudo: false, vendas: 0 });
   if (!ini || !fim || fim < ini) return p;
   const lanc = Object.values(lerLancamentos());
@@ -2438,15 +2474,110 @@ function vendasVisao(p) {
 }
 
 // Investimento e conversas só dos dias com venda lançada — ROAS e custo por venda comparáveis
-function totaisDosDias(faixas) {
-  if (!dadosDiarios) return null;
+function totaisDosDias(faixas, diarios = dadosDiarios) {
+  if (!diarios) return null;
   const dentro = d => faixas.some(f => d >= f.ini && d <= f.fim);
-  return somarTotais(filtrarPorLoja(dadosDiarios.filter(r => dentro(r.date_start))));
+  return somarTotais(filtrarPorLoja(diarios.filter(r => dentro(r.date_start))));
 }
-function totaisCobertos(p) {
-  if (p.cobreTudo) return Object.assign(somarTotais(filtrarPorLoja(dadosCamp)), { exato: true });
-  const t = totaisDosDias(p.faixas);
-  return t ? Object.assign(t, { exato: true }) : Object.assign(somarTotais(filtrarPorLoja(dadosCamp)), { exato: false });
+function totaisCobertos(p, camp = dadosCamp, diarios = dadosDiarios) {
+  if (p.cobreTudo) return Object.assign(somarTotais(filtrarPorLoja(camp)), { exato: true });
+  const t = totaisDosDias(p.faixas, diarios);
+  return t ? Object.assign(t, { exato: true }) : Object.assign(somarTotais(filtrarPorLoja(camp)), { exato: false });
+}
+
+// ─── COMPARATIVO ──────────────────────────────────────────────────────────
+// Período que começa no dia 1: mesmo trecho do(s) mês(es) anterior(es) (1–27/out → 1–27/set; set → ago).
+// Outros (7/30 dias, semanas, datas livres): mesmo número de dias imediatamente antes.
+function mesMenos(mes, k) {
+  let [y, m] = mes.split('-').map(Number);
+  m -= k; while (m < 1) { m += 12; y--; }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+function periodoAnterior(ini, fim) {
+  if (ini.endsWith('-01')) {
+    const k = mesesEntre(ini, fim).length;
+    const iniAnt = mesMenos(ini.slice(0, 7), k) + '-01';
+    if (fim === ultimoDiaMes(fim.slice(0, 7))) return { ini: iniAnt, fim: ultimoDiaMes(mesMenos(fim.slice(0, 7), k)) };
+    if (k === 1) {
+      const ultAnt = ultimoDiaMes(iniAnt.slice(0, 7));
+      const dia = Math.min(+fim.slice(8), +ultAnt.slice(8));
+      return { ini: iniAnt, fim: `${iniAnt.slice(0, 7)}-${String(dia).padStart(2, '0')}` };
+    }
+  }
+  const n = diasEntre(ini, fim);
+  return { ini: dPlus(ini, -n), fim: dPlus(ini, -1) };
+}
+
+// Indicadores de um período (respeita o filtro de loja). Comerciais = null quando não há venda lançada
+function metricasPeriodo(ini, fim, camp, diarios) {
+  const t = somarTotais(filtrarPorLoja(camp));
+  const p = vendasDoPeriodo(ini, fim);
+  const vis = vendasVisao(p);
+  const okV = p.ok && vis.fat > 0;
+  const tc = okV ? totaisCobertos(p, camp, diarios) : null;
+  return {
+    invest: t.spend, alcance: t.reach, impr: t.impressions, cliques: t.clicks, conv: t.conv,
+    cpm: t.impressions > 0 ? t.spend / t.impressions * 1000 : null,
+    cpc: t.conv > 0 ? t.spend / t.conv : null,
+    fat: okV ? vis.fat : null, vendas: okV ? vis.vendas : null,
+    cpv: okV && vis.vendas > 0 ? tc.spend / vis.vendas : null,
+    roas: okV && tc.spend > 0 ? vis.fat / tc.spend : null,
+    txconv: okV && tc.conv > 0 && vis.vendas > 0 ? vis.vendas / tc.conv * 100 : null,
+  };
+}
+
+// [id do valor no card, indicador, sentido (1 = subir é bom, -1 = cair é bom, 0 = neutro), formato]
+const COMPARAVEIS = [
+  ['c-invest', 'invest', 0, 'moeda'], ['c-alcance', 'alcance', 1, 'n'], ['c-impr', 'impr', 1, 'n'],
+  ['c-clicks', 'cliques', 1, 'n'], ['c-conv', 'conv', 1, 'n'], ['c-cpm', 'cpm', -1, 'moeda'], ['c-cpc', 'cpc', -1, 'moeda'],
+  ['c-fat-online', 'fat', 1, 'moeda'], ['c-vendas', 'vendas', 1, 'n'], ['c-cpv', 'cpv', -1, 'moeda'],
+  ['c-roas', 'roas', 1, 'x'], ['c-conversao', 'txconv', 1, 'pct'],
+];
+const FORMATOS = { moeda: v => 'R$' + fmt(v), n: v => fmtN(v), x: v => fmtD(v, 2) + 'x', pct: v => fmtD(v, 1) + '%' };
+
+function renderComparativo() {
+  const btn = document.getElementById('btn-comparar');
+  if (btn) btn.classList.toggle('active', comparar);
+  const rotulo = document.getElementById('header-compare');
+  const ativo = comparar && dadosCampAnt && periodoAnt;
+  rotulo.textContent = ativo ? `comparando com ${fmtBr(periodoAnt.ini)} → ${fmtBr(periodoAnt.fim)}` : '';
+  rotulo.style.display = ativo ? 'block' : 'none';
+  const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
+  const atual = ativo ? metricasPeriodo(ini, fim, dadosCamp, dadosDiarios) : null;
+  const ant = ativo ? metricasPeriodo(periodoAnt.ini, periodoAnt.fim, dadosCampAnt, dadosDiariosAnt) : null;
+  const vAnt = ativo ? vendasDoPeriodo(periodoAnt.ini, periodoAnt.fim) : null;
+  const semVendaAnt = vAnt && vAnt.mesesParciais.length
+    ? `${vAnt.mesesParciais.map(nomeMes).join(', ')} só tem o total do mês`
+    : 'sem vendas lançadas no período anterior';
+  COMPARAVEIS.forEach(([id, chave, sentido, formato]) => {
+    const val = document.getElementById(id);
+    if (!val) return;
+    let el = val.parentElement.querySelector('.delta');
+    if (!ativo) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.className = 'delta'; val.after(el); }
+    const a = atual[chave], b = ant[chave];
+    if (a == null) { el.remove(); return; }
+    if (b == null || b === 0) {
+      el.className = 'delta neutro';
+      el.textContent = b === 0 ? 'ant. 0' : ['fat', 'vendas', 'cpv', 'roas', 'txconv'].includes(chave) ? semVendaAnt : 'sem dado no período anterior';
+      return;
+    }
+    const pct = (a - b) / Math.abs(b) * 100;
+    const igual = Math.abs(pct) < 0.05;
+    const bom = sentido === 0 || igual ? null : (pct > 0) === (sentido > 0);
+    el.className = 'delta ' + (bom == null ? 'neutro' : bom ? 'bom' : 'ruim');
+    el.textContent = `${igual ? '=' : pct > 0 ? '▲' : '▼'} ${fmtD(Math.abs(pct), 1)}% · ant. ${FORMATOS[formato](b)}`;
+    el.title = `Período anterior (${fmtBr(periodoAnt.ini)} → ${fmtBr(periodoAnt.fim)}): ${FORMATOS[formato](b)}`;
+  });
+}
+
+function alternarComparar() {
+  comparar = !comparar;
+  try { localStorage.setItem('gmstore_comparar', comparar ? '1' : '0'); } catch (e) {}
+  const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
+  const pa = ini && fim ? periodoAnterior(ini, fim) : null;
+  if (comparar && periodoCarregado === `${ini}_${fim}` && !(dadosCampAnt && periodoAnt && pa && periodoAnt.ini === pa.ini && periodoAnt.fim === pa.fim)) buscarDados();
+  else renderComparativo();
 }
 
 function faixasTexto(faixas) {
