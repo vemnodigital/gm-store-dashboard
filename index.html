@@ -384,6 +384,19 @@ body.theme-light .aviso-comercial.info{background:#eff6ff;border-color:#93c5fd;c
 body.theme-light .tbl-semanas tfoot td{background:#f8fafc;border-top-color:#e2e8f0;}
 .btn-mini{background:transparent;border:1px solid #2d3148;border-radius:6px;color:#94a3b8;cursor:pointer;font-size:12px;padding:3px 7px;margin-left:4px;font-family:inherit;}
 .btn-mini:hover{border-color:#748ffc;color:#748ffc;}
+.btn-lancar{border-color:#f59e0b;color:#fbbf24;font-weight:700;}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#1e2235;color:#94a3b8;}
+.pill.pendente{background:#2a1e10;color:#fbbf24;} .pill.andamento{background:#12233d;color:#93c5fd;}
+body.theme-light .pill{background:#f1f5f9;color:#475569;} body.theme-light .pill.pendente{background:#fffbeb;color:#92400e;} body.theme-light .pill.andamento{background:#eff6ff;color:#1e3a8a;}
+.linha-semana.sem-venda td{opacity:0.92;}
+.linha-mes td{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#748ffc;background:#12151e;padding:8px 16px;}
+body.theme-light .linha-mes td{background:#f8fafc;}
+.tbl-semanas tr.linha-total td{padding:10px 16px;font-size:12px;font-weight:700;color:var(--t-text);border-top:1px solid #2d3148;background:#12151e;}
+body.theme-light .tbl-semanas tr.linha-total td{background:#f8fafc;border-top-color:#e2e8f0;}
+.store-comercial{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #2d3148;background:rgba(47,158,68,0.06);}
+.store-comercial .sm{border-bottom:none;}
+.store-comercial.vazio{display:block;padding:11px 14px;font-size:12px;color:var(--t-dim);background:transparent;}
+body.theme-light .store-comercial{border-top-color:#e2e8f0;}
 .btn-publicar{border-color:#3b5bdb!important;color:#748ffc!important;}
 .status-publicacao{font-size:11px;color:var(--t-dim);white-space:nowrap;}
 .status-publicacao.ok{color:#69db7c;} .status-publicacao.erro{color:#fbbf24;}
@@ -464,6 +477,10 @@ body.theme-light .top-ad-camp,body.theme-light .top-ad-metricas .ml{color:#64748
   .tbl-semanas tfoot tr{background:#12151e;}
   body.theme-light .tbl-semanas tfoot tr{background:#f8fafc;}
   .tbl-semanas td.so-admin:empty{display:none;}
+  .tbl-semanas tr.linha-total{background:#12151e;}
+  .tbl-semanas tr.linha-total td{padding:0!important;background:transparent!important;border:none!important;}
+  body.theme-light .tbl-semanas tr.linha-total{background:#f8fafc;}
+  .tbl-semanas tr.linha-mes{display:block;padding:8px 14px;}
   table.tbl-cards tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;padding:13px 14px;}
   table.tbl-cards td{padding:0!important;max-width:none!important;white-space:normal!important;text-align:left!important;font-size:13px;min-width:0;overflow-wrap:anywhere;}
   table.tbl-cards td::before{content:attr(data-label);display:block;font-size:10px;font-weight:600;color:var(--t-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
@@ -1062,14 +1079,15 @@ body.theme-light .txt-editor:empty::before{color:#94a3b8;}
 
       <!-- VENDAS LANÇADAS (por semana / mês) — clicar numa linha filtra o painel por aquele período -->
       <div class="table-box" id="box-semanas" style="display:none;margin-top:12px;">
-        <h3 id="semanas-titulo">Vendas lançadas</h3>
+        <h3 id="semanas-titulo">Semana a semana</h3>
         <div style="overflow-x:auto;">
           <table class="tbl-cards tbl-semanas">
             <thead>
               <tr>
-                <th>Período</th><th class="td-r">Faturamento</th><th class="td-r">Vendas</th>
-                <th class="td-r">STA</th><th class="td-r">Castelo</th><th class="td-r">Entrega</th>
-                <th class="td-r">Investimento</th><th class="td-r">ROAS</th><th class="td-r so-admin"></th>
+                <th>Semana</th><th class="td-r">Investido</th><th class="td-r">Conversas</th><th class="td-r">Custo/conv.</th>
+                <th class="td-r">Faturamento</th><th class="td-r">Vendas</th><th class="td-r">ROAS</th>
+                <th class="td-r">STA (fat · vendas · ROAS)</th><th class="td-r">Castelo (fat · vendas · ROAS)</th><th class="td-r">Entrega</th>
+                <th class="td-r so-admin"></th>
               </tr>
             </thead>
             <tbody id="tbody-semanas"></tbody>
@@ -1744,10 +1762,9 @@ async function buscarDados() {
     mostrarLoading(true, 'Buscando investimento por dia...');
     dadosDiarios = null;
     try {
-      const hoje = hojeStr(), mesFim = ultimoDiaMes(fim.slice(0, 7));
       dadosDiarios = await paginar(`${CFG.account}/insights`, {
         fields: 'campaign_name,spend,actions', level: 'campaign', time_increment: 1, limit: 500,
-        time_range: { since: ini.slice(0, 7) + '-01', until: mesFim < hoje ? mesFim : hoje },
+        time_range: intervaloSemanas(ini, fim),
       });
     } catch(e) { /* opcional: sem ele, ROAS usa o investimento do período inteiro */ }
 
@@ -1909,7 +1926,7 @@ function renderFunil(t) {
   }
   html += ligacao + (totalVendas > 0
       ? `<div class="funnel-drop fd-ok">↓ ${agend > 0 ? fmtD(totalVendas / agend * 100, 1) + '% dos agendamentos fecharam' : fmtD(totalVendas / (tc.conv || conv) * 100, 1) + '% das conversas viraram venda'}</div>`
-      : `<div class="funnel-drop fd-warn">↓ ${okV ? 'Sem vendas no período' : 'Vendas: veja o aviso em Comercial'}</div>`)
+      : `<div class="funnel-drop fd-warn">↓ ${okV ? (vis.fat > 0 ? 'Faturamento lançado sem o número de vendas' : 'Sem vendas no período') : 'Vendas: veja o aviso em Comercial'}</div>`)
     + ligacao
     + etapa(6, totalVendas > 0 ? 'linear-gradient(90deg,#065f46,#059669)' : 'linear-gradient(90deg,#374151,#4b5563)', 'Vendas', totalVendas > 0 ? fmtN(totalVendas) : '—');
   document.getElementById('funil-visual').innerHTML = html;
@@ -1949,6 +1966,16 @@ function renderLojas(camp, ini, fim) {
     return;
   }
 
+  const pv = vendasDoPeriodo();
+  const blocoComercial = loja => {
+    const c = comercialLoja(pv, loja);
+    if (!c) return `<div class="store-comercial vazio">${pv.ok ? 'Sem vendas desta loja no período' : 'Vendas: veja o aviso em Comercial'}</div>`;
+    return `<div class="store-comercial">
+        <div class="sm"><div class="sl">Faturamento</div><div class="sv" style="color:var(--t-green);">R$${fmt(c.fat)}</div><div class="ss">${c.vendas} venda${c.vendas === 1 ? '' : 's'}</div></div>
+        <div class="sm"><div class="sl">ROAS</div><div class="sv" style="color:${corRoas(c.roas)};">${fmtRoas(c.roas)}</div><div class="ss">${c.inv != null ? 'invest. R$' + fmt(c.inv) : ''}</div></div>
+        <div class="sm"><div class="sl">Custo/venda</div><div class="sv">${c.cpv != null ? 'R$' + fmt(c.cpv) : '—'}</div><div class="ss"></div></div>
+      </div>`;
+  };
   let html = '';
   if (lojaAtual !== 'castelo') {
     const cpcSta = ts.conv > 0 ? fmt(ts.spend/ts.conv) : '—';
@@ -1964,7 +1991,7 @@ function renderLojas(camp, ini, fim) {
         <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(ts.reach)}</div><div class="ss">pessoas</div></div>
         <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(ts.spend/ts.impressions*1000||0)}</div><div class="ss"></div></div>
         <div class="sm"><div class="sl">CTR</div><div class="sv">${fmtD(ts.impressions>0?ts.clicks/ts.impressions*100:0, 2)}%</div><div class="ss"></div></div>
-      </div></div>`;
+      </div>${blocoComercial('sta')}</div>`;
   }
   if (lojaAtual !== 'sta') {
     const cpcCas = tc.conv > 0 ? fmt(tc.spend/tc.conv) : '—';
@@ -1980,7 +2007,7 @@ function renderLojas(camp, ini, fim) {
         <div class="sm"><div class="sl">Alcance</div><div class="sv">${fmtN(tc.reach)}</div><div class="ss">pessoas</div></div>
         <div class="sm"><div class="sl">CPM</div><div class="sv">R$${fmt(tc.spend/tc.impressions*1000||0)}</div><div class="ss"></div></div>
         <div class="sm"><div class="sl">CTR</div><div class="sv">${fmtD(tc.impressions>0?tc.clicks/tc.impressions*100:0, 2)}%</div><div class="ss"></div></div>
-      </div></div>`;
+      </div>${blocoComercial('castelo')}</div>`;
   }
   document.getElementById('stores-grid').innerHTML = html || '<div style="color:var(--t-dim);padding:16px;font-size:13px;">Sem dados para as lojas no período.</div>';
 }
@@ -2246,8 +2273,9 @@ function abrirModalVendas() {
   const atual = lanc[`${ini}_${fim}`];
   const v = atual || { fatOnline: 0, vendasOnline: 0, sta: { vendas: 0, fatTotal: 0 }, castelo: { vendas: 0, fatTotal: 0 } };
   const dias = diasEntre(ini, fim);
+  const semana = semanaDoPeriodo(ini, fim);
   document.getElementById('modal-period-label').textContent =
-    `${fmtBr(ini)} → ${fmtBr(fim)} · ${dias} dia${dias > 1 ? 's' : ''}${atual ? ' · editando o lançamento salvo' : ''}`;
+    `${semana ? `Semana ${semana.n} de ${nomeMes(semana.mes)} · ` : ''}${fmtBr(ini)} → ${fmtBr(fim)} · ${dias} dia${dias > 1 ? 's' : ''}${atual ? ' · editando o lançamento salvo' : ''}`;
 
   const avisos = [];
   const sobre = lancamentosSobrepostos(lanc, ini, fim);
@@ -2318,12 +2346,7 @@ function excluirLancamento(chave) {
 
 async function editarLancamento(chave) {
   const l = lerLancamentos()[chave];
-  if (!l) return;
-  document.getElementById('date-start').value = l.ini;
-  document.getElementById('date-end').value = l.fim;
-  setPresetManual();
-  await buscarDados();
-  abrirModalVendas();
+  if (l) await lancarPeriodo(l.ini, l.fim);
 }
 
 // Redesenha com os dados do Meta já carregados (busca de novo só se o período mudou)
@@ -2486,6 +2509,23 @@ function totaisCobertos(p, camp = dadosCamp, diarios = dadosDiarios) {
   return t ? Object.assign(t, { exato: true }) : Object.assign(somarTotais(filtrarPorLoja(camp)), { exato: false });
 }
 
+// Uma loja específica (independe do filtro da tela): investimento e conversas nos dias indicados
+function totaisLoja(loja, faixas, diarios = dadosDiarios) {
+  if (!diarios) return null;
+  const dentro = d => faixas.some(f => d >= f.ini && d <= f.fim);
+  return somarTotais(diarios.filter(r => lojaDecamp(r.campaign_name) === loja && dentro(r.date_start)));
+}
+// Comercial de uma loja no período: faturamento, vendas, ROAS e custo por venda (dias com venda)
+function comercialLoja(p, loja) {
+  const v = p[loja];
+  if (!p.ok || !(v.fat > 0)) return null;
+  const t = p.cobreTudo ? somarTotais(dadosCamp.filter(c => lojaDecamp(c.campaign_name) === loja)) : totaisLoja(loja, p.faixas);
+  const inv = t ? t.spend : null;
+  return { fat: v.fat, vendas: v.vendas, inv, roas: inv > 0 ? v.fat / inv : null, cpv: inv > 0 && v.vendas > 0 ? inv / v.vendas : null };
+}
+const fmtRoas = r => r != null ? fmtD(r, 2) + 'x' : '—';
+const corRoas = r => r == null ? 'var(--t-dim)' : r >= 3 ? 'var(--t-green)' : r >= 1.5 ? 'var(--t-blue)' : 'var(--t-red)';
+
 // ─── COMPARATIVO ──────────────────────────────────────────────────────────
 // Período que começa no dia 1: mesmo trecho do(s) mês(es) anterior(es) (1–27/out → 1–27/set; set → ago).
 // Outros (7/30 dias, semanas, datas livres): mesmo número de dias imediatamente antes.
@@ -2643,7 +2683,10 @@ function atualizarCardsVendas() {
       cpv > 0 ? `R$${fmt(tot.spend)} ÷ ${vis.vendas} vendas` : 'Investido ÷ total de vendas');
     const roas = tot.spend > 0 ? vis.fat / tot.spend : 0;
     card(['roas', 'roas'], roas >= 3 ? 'c-green' : roas >= 1.5 ? 'c-blue' : roas > 0 ? 'c-red' : '', roas > 0 ? fmtD(roas, 2) + 'x' : '—',
-      roas > 0 ? `R$${fmt(vis.fat)} ÷ R$${fmt(tot.spend)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}` : 'Sem investimento nesses dias');
+      roas <= 0 ? 'Sem investimento nesses dias'
+      : lojaAtual === 'all'
+      ? `STA ${fmtRoas(comercialLoja(p, 'sta')?.roas)} · Castelo ${fmtRoas(comercialLoja(p, 'castelo')?.roas)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}`
+      : `R$${fmt(vis.fat)} ÷ R$${fmt(tot.spend)} — ${roas >= 3 ? 'Excelente' : roas >= 1.5 ? 'Bom' : 'Atenção'}`);
     const tx = tot.conv > 0 && vis.vendas > 0 ? vis.vendas / tot.conv * 100 : 0;
     card(['conversao', 'conversao'], tx >= 10 ? 'c-green' : tx >= 5 ? 'c-blue' : tx > 0 ? 'c-red' : '', tx > 0 ? fmtD(tx, 1) + '%' : '—',
       tx > 0 ? `${vis.vendas} vendas ÷ ${fmtN(tot.conv)} conversas · 1 a cada ${Math.round(tot.conv / vis.vendas)}` : 'Vendas ÷ conversas WhatsApp');
@@ -2657,68 +2700,144 @@ function atualizarCardsVendas() {
   btn.textContent = temDados ? '✓ Vendas' : '+ Vendas';
 }
 
-// Tabela "Vendas lançadas": lançamentos dos meses do período, com investimento e ROAS de cada um
+// ─── VISÃO SEMANAL ───────────────────────────────────────────────────────
+// Semanas de segunda a domingo; cada semana pertence ao mês onde tem mais dias
+// (26/10–01/11 é de outubro; 30/11–06/12 é de dezembro)
+function segundaDa(d) { return dPlus(d, -((new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7)); }
+function semanasDoMes(mes) {
+  const out = [];
+  for (let seg = segundaDa(mes + '-01'); seg <= ultimoDiaMes(mes); seg = dPlus(seg, 7)) {
+    const sem = { ini: seg, fim: dPlus(seg, 6) };
+    if (mesDoLancamento(sem) === mes) out.push(Object.assign(sem, { n: out.length + 1, mes }));
+  }
+  return out;
+}
+// Período exatamente igual a uma semana do calendário → { n, mes, ini, fim }
+function semanaDoPeriodo(ini, fim) {
+  if (diasEntre(ini, fim) !== 7 || segundaDa(ini) !== ini) return null;
+  return semanasDoMes(mesDoLancamento({ ini, fim })).find(x => x.ini === ini) || null;
+}
+// Dias que a visão semanal dos meses do período precisa (as semanas invadem o mês vizinho)
+function intervaloSemanas(ini, fim) {
+  const meses = mesesEntre(ini, fim);
+  const prim = semanasDoMes(meses[0])[0], ult = semanasDoMes(meses[meses.length - 1]).slice(-1)[0];
+  const a = [ini.slice(0, 7) + '-01', prim?.ini].filter(Boolean).sort()[0];
+  const b = [ultimoDiaMes(fim.slice(0, 7)), ult?.fim].filter(Boolean).sort().pop();
+  const hoje = hojeStr();
+  return { since: a, until: b < hoje ? b : hoje };
+}
+
 function renderSemanas() {
   const ini = document.getElementById('date-start').value, fim = document.getElementById('date-end').value;
   const box = document.getElementById('box-semanas');
   if (!ini || !fim) { box.style.display = 'none'; return; }
-  const meses = mesesEntre(ini, fim);
-  const todos = lerLancamentos();
-  const mesesComLanc = new Set(Object.values(todos).map(mesDoLancamento));
-  const vendas = lerDados('gmstore_vendas');
-  const linhas = Object.entries(todos).filter(([, l]) => meses.includes(mesDoLancamento(l)))
-    .map(([chave, l]) => ({ chave, ini: l.ini, fim: l.fim, v: l }));
-  meses.forEach(m => { if (!mesesComLanc.has(m) && vendas[m]?.fatOnline > 0) linhas.push({ chave: null, ini: `${m}-01`, fim: ultimoDiaMes(m), v: vendas[m], mensal: true }); });
-  linhas.sort((a, b) => a.ini.localeCompare(b.ini));
-
-  const loja = lojaAtual === 'sta' ? ' · Loja STA' : lojaAtual === 'castelo' ? ' · Loja Castelo' : '';
-  document.getElementById('semanas-titulo').textContent = `Vendas lançadas — ${meses.map(nomeMes).join(', ')}${loja}`;
-  if (!linhas.length) {
-    box.style.display = EH_CLIENTE ? 'none' : 'block';
-    document.getElementById('tbody-semanas').innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--t-dim);padding:18px;">Nenhuma venda lançada em ${meses.map(nomeMes).join(', ')}. Selecione a semana (ex.: "Semana passada") e clique em "+ Vendas".</td></tr>`;
-    document.getElementById('tfoot-semanas').innerHTML = '';
-    return;
-  }
   box.style.display = 'block';
+  const meses = mesesEntre(ini, fim);
+  const hoje = hojeStr();
+  const vendasMes = lerDados('gmstore_vendas');
+  const lanc = Object.entries(lerLancamentos()).map(([chave, l]) => Object.assign({ chave }, l));
+  const loja = lojaAtual === 'sta' ? ' · Loja STA' : lojaAtual === 'castelo' ? ' · Loja Castelo' : '';
+  document.getElementById('semanas-titulo').textContent = `Semana a semana — ${meses.map(nomeMes).join(', ')}${loja}`;
 
-  const total = vendaVazia(); let totInv = 0, invOk = !!dadosDiarios;
-  const roasTxt = (fat, inv) => inv > 0 ? fmtD(fat / inv, 2) + 'x' : '—';
-  const corRoas = (fat, inv) => inv > 0 ? (fat / inv >= 3 ? 'var(--t-green)' : fat / inv >= 1.5 ? 'var(--t-blue)' : 'var(--t-red)') : 'var(--t-dim)';
-  document.getElementById('tbody-semanas').innerHTML = linhas.map(r => {
-    const t = somarVenda(vendaVazia(), r.v);
-    somarVenda(total, r.v);
-    const vis = vendasVisao(t);
-    const inv = totaisDosDias([{ ini: r.ini, fim: r.fim }])?.spend;
-    if (inv != null) totInv += inv;
-    const sel = r.ini >= ini && r.fim <= fim;
-    const rotulo = r.mensal ? `${nomeMes(r.ini.slice(0, 7))} — total do mês` : `${fmtCurto(r.ini)} a ${fmtCurto(r.fim)}${diasEntre(r.ini, r.fim) === 7 ? ' · semana' : ''}`;
-    const acoes = r.chave && !EH_CLIENTE
-      ? `<button class="btn-mini" title="Editar" onclick="event.stopPropagation();editarLancamento('${r.chave}')">✎</button><button class="btn-mini" title="Excluir" onclick="event.stopPropagation();excluirLancamento('${r.chave}')">🗑</button>` : '';
-    return `<tr class="linha-semana${sel ? ' sel' : ''}" title="Ver só este período" onclick="filtrarPeriodo('${r.ini}','${r.fim}')">
+  const meta = faixas => { const t = totaisDosDias(faixas); return t ? { inv: t.spend, conv: t.conv } : null; };
+  const celLoja = (v, l, faixas) => {
+    if (!(v[l].fat > 0) && !(v[l].vendas > 0)) return '—';
+    const t = totaisLoja(l, faixas);
+    const roas = t && t.spend > 0 ? v[l].fat / t.spend : null;
+    return `R$${fmt(v[l].fat)} · ${v[l].vendas} · <span style="color:${corRoas(roas)};font-weight:700;">${fmtRoas(roas)}</span>`;
+  };
+  const acoesAdmin = (chave, ini2, fim2, lancar) => EH_CLIENTE ? '' : lancar
+    ? `<button class="btn-mini btn-lancar" onclick="event.stopPropagation();lancarPeriodo('${ini2}','${fim2}')">+ Lançar</button>`
+    : chave ? `<button class="btn-mini" title="Editar" onclick="event.stopPropagation();editarLancamento('${chave}')">✎</button><button class="btn-mini" title="Excluir" onclick="event.stopPropagation();excluirLancamento('${chave}')">🗑</button>` : '';
+  const linhaHtml = (rotulo, faixas, v, temVenda, extra) => {
+    const m = meta(faixas);
+    const vis = vendasVisao(v);
+    const tv = temVenda ? totaisDosDias(faixas) : null;
+    const roas = tv && tv.spend > 0 && vis.fat > 0 ? vis.fat / tv.spend : null;
+    const vendaCel = temVenda ? `R$${fmt(vis.fat)}` : extra.pendencia;
+    const sel = faixas[0].ini >= ini && faixas[faixas.length - 1].fim <= fim;
+    return `<tr class="linha-semana${sel ? ' sel' : ''}${extra.classe || ''}" title="Ver só este período" onclick="filtrarPeriodo('${faixas[0].ini}','${faixas[faixas.length - 1].fim}')">
       <td style="color:var(--t-text);font-weight:600;">${rotulo}</td>
-      <td class="td-r" style="color:var(--t-green);font-weight:700;">R$${fmt(vis.fat)}</td>
-      <td class="td-r">${vis.vendas}</td>
-      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.sta.fat)} · ${t.sta.vendas}</td>
-      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.castelo.fat)} · ${t.castelo.vendas}</td>
-      <td class="td-r" style="color:var(--t-sub);">R$${fmt(t.entrega.fat)} · ${t.entrega.vendas}</td>
-      <td class="td-r" style="color:var(--t-sub);">${inv != null ? 'R$' + fmt(inv) : '—'}</td>
-      <td class="td-r" style="color:${corRoas(vis.fat, inv)};font-weight:700;">${inv != null ? roasTxt(vis.fat, inv) : '—'}</td>
-      <td class="td-r so-admin">${acoes}</td>
+      <td class="td-r" style="color:var(--t-sub);">${m ? 'R$' + fmt(m.inv) : '—'}</td>
+      <td class="td-r" style="color:var(--t-sub);">${m ? fmtN(m.conv) : '—'}</td>
+      <td class="td-r" style="color:var(--t-sub);">${m && m.conv > 0 ? 'R$' + fmt(m.inv / m.conv) : '—'}</td>
+      <td class="td-r" style="color:var(--t-green);font-weight:700;">${vendaCel}</td>
+      <td class="td-r">${temVenda ? vis.vendas : '—'}</td>
+      <td class="td-r" style="color:${corRoas(roas)};font-weight:700;">${temVenda ? fmtRoas(roas) : '—'}</td>
+      <td class="td-r" style="color:var(--t-sub);">${temVenda ? celLoja(v, 'sta', faixas) : '—'}</td>
+      <td class="td-r" style="color:var(--t-sub);">${temVenda ? celLoja(v, 'castelo', faixas) : '—'}</td>
+      <td class="td-r" style="color:var(--t-sub);">${temVenda && (v.entrega.fat > 0 || v.entrega.vendas > 0) ? `R$${fmt(v.entrega.fat)} · ${v.entrega.vendas}` : '—'}</td>
+      <td class="td-r so-admin">${extra.acoes || ''}</td>
     </tr>`;
-  }).join('');
-  const visT = vendasVisao(total);
-  document.getElementById('tfoot-semanas').innerHTML = `<tr class="linha-total">
-      <td>Total${linhas.length > 1 ? ` (${linhas.length} lançamentos)` : ''}</td>
-      <td class="td-r">R$${fmt(visT.fat)}</td>
-      <td class="td-r">${visT.vendas}</td>
-      <td class="td-r">R$${fmt(total.sta.fat)} · ${total.sta.vendas}</td>
-      <td class="td-r">R$${fmt(total.castelo.fat)} · ${total.castelo.vendas}</td>
-      <td class="td-r">R$${fmt(total.entrega.fat)} · ${total.entrega.vendas}</td>
-      <td class="td-r">${invOk ? 'R$' + fmt(totInv) : '—'}</td>
-      <td class="td-r" style="color:${corRoas(visT.fat, totInv)};">${invOk ? roasTxt(visT.fat, totInv) : '—'}</td>
-      <td class="td-r so-admin"></td>
-    </tr>`;
+  };
+
+  let html = '';
+  meses.forEach(mes => {
+    const semanas = semanasDoMes(mes).filter(x => x.ini <= hoje);
+    const doMes = lanc.filter(l => mesDoLancamento(l) === mes);
+    const usados = new Set();
+    if (meses.length > 1) html += `<tr class="linha-mes"><td colspan="11">${nomeMes(mes)}</td></tr>`;
+    semanas.forEach(x => {
+      const dentro = doMes.filter(l => l.ini >= x.ini && l.fim <= x.fim);
+      dentro.forEach(l => usados.add(l.chave));
+      const v = dentro.reduce(somarVenda, vendaVazia());
+      const emAndamento = x.fim >= hoje;
+      // Semana dentro de um lançamento maior (mês inteiro), mesmo que só em parte (semanas da virada do mês)
+      const cobertoPorMes = doMes.some(l => !usados.has(l.chave) && diasEntre(l.ini, l.fim) > 7 && l.ini <= x.fim && l.fim >= x.ini) || (!doMes.length && vendasMes[mes]?.fatOnline > 0);
+      const pendencia = cobertoPorMes ? '<span class="pill">no total do mês</span>'
+        : emAndamento ? '<span class="pill andamento">em andamento</span>'
+        : `<span class="pill pendente">${EH_CLIENTE ? 'aguardando' : 'pendente'}</span>`;
+      html += linhaHtml(`Semana ${x.n} · ${fmtCurto(x.ini)} a ${fmtCurto(x.fim)}`, [x], v, dentro.length > 0, {
+        pendencia, classe: dentro.length ? '' : ' sem-venda',
+        acoes: dentro.length === 1 ? acoesAdmin(dentro[0].chave) : !dentro.length && !cobertoPorMes ? acoesAdmin(null, x.ini, x.fim, true) : '',
+      });
+    });
+    // Lançamentos que não cabem numa semana (mês inteiro, períodos livres) e meses antigos só com total
+    doMes.filter(l => !usados.has(l.chave)).forEach(l => {
+      html += linhaHtml(`${diasEntre(l.ini, l.fim) >= 28 ? 'Mês inteiro' : 'Período'} · ${fmtCurto(l.ini)} a ${fmtCurto(l.fim)}`, [{ ini: l.ini, fim: l.fim }],
+        somarVenda(vendaVazia(), l), true, { classe: ' linha-bloco', acoes: acoesAdmin(l.chave) });
+    });
+    if (!doMes.length && vendasMes[mes]?.fatOnline > 0) {
+      html += linhaHtml(`Mês inteiro · ${nomeMes(mes)}`, [{ ini: mes + '-01', fim: ultimoDiaMes(mes) }], somarVenda(vendaVazia(), vendasMes[mes]), true, { classe: ' linha-bloco' });
+    }
+    // Total do mês: Meta de todas as semanas + vendas do mês (ROAS só nos dias com venda)
+    const faixasMeta = semanas.map(x => ({ ini: x.ini, fim: x.fim < hoje ? x.fim : hoje }))
+      .concat(doMes.map(l => ({ ini: l.ini, fim: l.fim })));
+    const faixasVenda = doMes.length ? doMes.map(l => ({ ini: l.ini, fim: l.fim }))
+      : vendasMes[mes]?.fatOnline > 0 ? [{ ini: mes + '-01', fim: ultimoDiaMes(mes) }] : [];
+    const vMes = doMes.length ? doMes.reduce(somarVenda, vendaVazia()) : vendasMes[mes]?.fatOnline > 0 ? somarVenda(vendaVazia(), vendasMes[mes]) : vendaVazia();
+    const temVendaMes = vMes.fat > 0;
+    if (faixasMeta.length) {
+      const m = meta(faixasMeta), vis = vendasVisao(vMes);
+      const tv = temVendaMes ? totaisDosDias(faixasVenda) : null;
+      const roas = tv && tv.spend > 0 && vis.fat > 0 ? vis.fat / tv.spend : null;
+      html += `<tr class="linha-total">
+        <td>Total ${nomeMes(mes)}${semanas.length && semanas[semanas.length - 1].fim >= hoje ? ' (até hoje)' : ''}</td>
+        <td class="td-r">${m ? 'R$' + fmt(m.inv) : '—'}</td>
+        <td class="td-r">${m ? fmtN(m.conv) : '—'}</td>
+        <td class="td-r">${m && m.conv > 0 ? 'R$' + fmt(m.inv / m.conv) : '—'}</td>
+        <td class="td-r">${temVendaMes ? 'R$' + fmt(vis.fat) : '—'}</td>
+        <td class="td-r">${temVendaMes ? vis.vendas : '—'}</td>
+        <td class="td-r" style="color:${corRoas(roas)};">${temVendaMes ? fmtRoas(roas) : '—'}</td>
+        <td class="td-r">${temVendaMes ? celLoja(vMes, 'sta', faixasVenda) : '—'}</td>
+        <td class="td-r">${temVendaMes ? celLoja(vMes, 'castelo', faixasVenda) : '—'}</td>
+        <td class="td-r">${temVendaMes && vMes.entrega.fat > 0 ? `R$${fmt(vMes.entrega.fat)} · ${vMes.entrega.vendas}` : '—'}</td>
+        <td class="td-r so-admin"></td>
+      </tr>`;
+    }
+  });
+  document.getElementById('tbody-semanas').innerHTML = html || '<tr><td colspan="11" style="text-align:center;color:var(--t-dim);padding:18px;">Sem semanas no período.</td></tr>';
+  document.getElementById('tfoot-semanas').innerHTML = '';
   rotularTabelas();
+}
+
+// Abre o "+ Vendas" já no período (semana pendente, edição)
+async function lancarPeriodo(ini, fim) {
+  document.getElementById('date-start').value = ini;
+  document.getElementById('date-end').value = fim;
+  setPresetManual();
+  await buscarDados();
+  abrirModalVendas();
 }
 
 function filtrarPeriodo(ini, fim) {
